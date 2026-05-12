@@ -1,14 +1,14 @@
 import whisper
 import sounddevice as sd
 import scipy.io.wavfile as wav
-
+import numpy as np
 
 #load the whisper model
 model=whisper.load_model("small")
 
 
 def listen():
-    duration=6
+    duration=5
     sample_rate=16000
 
     print("🎙️ Listening...,Speak now")
@@ -21,10 +21,25 @@ def listen():
     )
 
     sd.wait()
+
+    volume=np.abs(audio).mean()
+    print(f"🔊 Volume: {volume}")
+
+    if volume<20:
+        return None
+
+
     audio_path="temp_audio.wav"
 
     wav.write(audio_path,sample_rate,audio)
+
     print("⏹️ Processing speech...")
+
     result=model.transcribe(audio_path,language="en")
-    text=result["text"]
-    return text.strip()
+
+    text=result["text"].strip()
+
+    if text=="":
+       return None 
+    
+    return text
