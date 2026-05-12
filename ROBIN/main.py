@@ -1,7 +1,7 @@
 from core.listener import listen 
 from core.brain import ask_api
 from core.speaker import speak
-from tools.command import execute_command
+from assistant.router import router_command
 
 
 
@@ -24,16 +24,14 @@ try:
         print("ROBIN: Goodbye!")
         break
 
-    command_result=execute_command(text)
+    result=router_command(text)
 
-    if command_result:
-       speak(command_result)
-       continue
+    if result["type"]=="command":
+       speak(result["response"])
+    else:
+         response=ask_api(text)
+         speak(response)
 
-
-    response=ask_api(text)
-    
-    speak(response)
 
 except KeyboardInterrupt:
     print("\nROBIN: Shutting down. Goodbye!")
