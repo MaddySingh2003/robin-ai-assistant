@@ -1,6 +1,7 @@
 from core.listener import listen 
 from core.brain import ask_api
 from core.speaker import speak
+from tools.command import execute_command
 
 
 
@@ -22,6 +23,13 @@ try:
     if text.lower() == "exit":
         print("ROBIN: Goodbye!")
         break
+
+    command_result=execute_command(text)
+
+    if command_result:
+       speak(command_result)
+       continue
+
 
     response=ask_api(text)
     
