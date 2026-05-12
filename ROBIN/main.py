@@ -8,8 +8,9 @@ print("ROBIN: Hello! I'm ROBIN, your AI assistant.")
 print("Say 'exit' to quit\n")
 
 
+try:
 
-while True:
+  while True:
     text=listen()
 
     if not text:
@@ -25,3 +26,6 @@ while True:
     response=ask_api(text)
     
     speak(response)
+
+except KeyboardInterrupt:
+    print("\nROBIN: Shutting down. Goodbye!")

@@ -4,7 +4,7 @@ import scipy.io.wavfile as wav
 import numpy as np
 
 #load the whisper model
-model=whisper.load_model("small")
+model=whisper.load_model("medium")
 
 
 def listen():
@@ -35,7 +35,9 @@ def listen():
 
     print("⏹️ Processing speech...")
 
-    result=model.transcribe(audio_path,language="en")
+    result=model.transcribe(audio_path,language="en"
+    ,fp16=False,
+    temperature=0)
 
     text=result["text"].strip()
 
