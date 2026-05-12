@@ -1,15 +1,12 @@
-from core.brain import ask_api
+from core.listener import listen 
 
 
-print("ROBIN: Hello! I'm ROBIN, your AI assistant." )
-print("type 'exit' to quit\n.")
+print("ROBIN: Hello! I'm ROBIN, your AI assistant.")
+print("Speak after the microphone starts")
+
 
 
 while True:
-    user_input = input("You: ")
-    if user_input.lower() == "exit":
-        print("ROBIN: Goodbye!")
-        break
+    text = listen()
 
-    response = ask_api(user_input)
-    print("ROBIN:",response )
+    print("You said:", text)
