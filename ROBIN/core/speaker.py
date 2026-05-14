@@ -1,38 +1,83 @@
 import subprocess
 import os
 import time
-from playsound import playsound
+import uuid
+import pygame
 
-PIPER_PATH=r"D:\AI-Assistant\piper\piper.exe"
-MODEL_PATH=r"D:\AI-Assistant\piper\models\en_us-amy-medium.onnx"
 
-OUTPUT_FILE="voice.wav"
+PIPER_PATH = r"D:\AI-Assistant\piper\piper.exe"
+
+ENGLISH_MODEL = (
+    r"D:\AI-Assistant\piper\models\en_US-amy-medium.onnx"
+)
+
+HINDI_MODEL = (
+    r"D:\AI-Assistant\piper\models\hi_IN-priyamvada-medium.onnx"
+)
+
+
+pygame.mixer.init()
+
+
+def is_hindi(text):
+    return any('\u0900' <= char <= '\u097F' for char in text)
+
 
 def speak(text):
 
     print("ROBIN:", text)
-    
-    process=subprocess.Popen(
+
+    output_file = (
+        f"voice_{uuid.uuid4().hex[:8]}.wav"
+    )
+
+    hindi_detected = is_hindi(text)
+
+    print("Hindi detected:", hindi_detected)
+
+    if hindi_detected:
+        model = HINDI_MODEL
+        print("Using Hindi voice")
+    else:
+        model = ENGLISH_MODEL
+        print("Using English voice")
+
+    # Generate speech
+    process = subprocess.Popen(
         [
             PIPER_PATH,
             "--model",
-            MODEL_PATH,
+            model,
             "--output_file",
-            OUTPUT_FILE,
+            output_file
         ],
         stdin=subprocess.PIPE,
-        text=True
+        text=True,
+        encoding="utf-8"
     )
 
     process.communicate(text)
 
-    playsound(OUTPUT_FILE)
+    # Play audio
+    pygame.mixer.music.load(
+        output_file
+    )
 
-    time.sleep(0.5)
+    pygame.mixer.music.play()
 
-    try:
-        if os.path.exists(OUTPUT_FILE):
-            os.remove(OUTPUT_FILE)
-    
-    except PermissionError:
-           pass
+    # Wait until audio finishes
+    while pygame.mixer.music.get_busy():
+        time.sleep(0.1)
+
+    # Stop and unload file
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()
+
+    # Small delay
+    time.sleep(0.2)
+
+    # Delete file
+    if os.path.exists(output_file):
+        os.remove(output_file)
+
+        print("🗑️ Audio deleted")

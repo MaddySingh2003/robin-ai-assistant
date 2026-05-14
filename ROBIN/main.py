@@ -1,5 +1,5 @@
 from core.listener import listen 
-from core.brain import ask_api
+from core.brain import ask_ai
 from core.speaker import speak
 from assistant.router import router_command
 
@@ -29,9 +29,15 @@ try:
     if result["type"]=="command":
        speak(result["response"])
     else:
-         response=ask_api(text)
-         speak(response)
+         # Force Hindi response if requested
+        if "hindi" in text.lower():
+           text = (
+               f"Answer only in Hindi: {text}"
+                )
 
+        response = ask_ai(text)
+
+        speak(response)
 
 except KeyboardInterrupt:
     print("\nROBIN: Shutting down. Goodbye!")
