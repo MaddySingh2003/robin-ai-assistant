@@ -20,7 +20,16 @@ pygame.mixer.init()
 
 
 def is_hindi(text):
-    return any('\u0900' <= char <= '\u097F' for char in text)
+    for char in text:
+        # Hindi
+        if '\u0900' <= char <= '\u097F':
+            return True
+
+        # Urdu / Arabic script
+        if '\u0600' <= char <= '\u06FF':
+            return True
+
+    return False
 
 
 def speak(text):

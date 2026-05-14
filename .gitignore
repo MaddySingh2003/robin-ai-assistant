@@ -1,8 +1,14 @@
-# Python virtual environment
+# Virtual environments
 venv/
-temp_audio.wav
-__pycache__/
 
-xtts_env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Audio/temp
+temp_audio.wav
+
+# Other folders
 piper/
-voices/

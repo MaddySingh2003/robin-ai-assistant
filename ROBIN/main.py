@@ -1,7 +1,7 @@
 from core.listener import listen 
 from core.brain import ask_ai
 from core.speaker import speak
-from assistant.router import router_command
+from assistant.router import route_request
 
 
 
@@ -24,10 +24,18 @@ try:
         print("ROBIN: Goodbye!")
         break
 
-    result=router_command(text)
+    result=route_request(text)
 
-    if result["type"]=="command":
-       speak(result["response"])
+    if result["type"] == "command":
+
+      if result["response"]:
+         speak(result["response"])
+
+      else:
+          speak(
+            "Sorry, I couldn't understand "
+            "that command."
+          )
     else:
          # Force Hindi response if requested
         if "hindi" in text.lower():

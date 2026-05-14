@@ -7,144 +7,149 @@ def execute_command(text):
 
     text = text.lower().strip()
 
+    # -------------------------
+    # Hindi / Hinglish Mapping
+    # -------------------------
+
+    replacements = {
+
+        "खोलो": "open",
+        "खोल": "open",
+        "chalu karo": "open",
+        "चालू करो": "open",
+        "start karo": "open",
+
+        "यूट्यूब": "youtube",
+        "क्रोम": "chrome",
+        "गूगल": "google",
+        "कैलकुलेटर": "calculator",
+        "नोटपैड": "notepad",
+        "सेटिंग्स": "settings",
+
+        # Hinglish
+        "youtube kholo": "open youtube",
+        "chrome kholo": "open chrome",
+        "google kholo": "open google",
+        "calculator kholo": "open calculator",
+
+        # Hindi
+        "यूट्यूब खोलो": "open youtube",
+        "क्रोम खोलो": "open chrome",
+        "गूगल खोलो": "open google",
+    }
+
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+
+    print(f"Normalized command: {text}")
+
     # ----------------------
-    # Web Commands
+    # DESKTOP APPS FIRST
     # ----------------------
 
-    if "open youtube" in text:
-        webbrowser.open("https://www.youtube.com")
+    if "chrome" in text:
+
+        chrome_path = (
+            r"C:\Program Files\Google"
+            r"\Chrome\Application\chrome.exe"
+        )
+
+        if os.path.exists(chrome_path):
+            subprocess.Popen(chrome_path)
+            return "Opening Chrome"
+
+        return "Chrome not found"
+
+    elif "calculator" in text:
+        subprocess.Popen("calc")
+        return "Opening Calculator"
+
+    elif "notepad" in text:
+        subprocess.Popen("notepad")
+        return "Opening Notepad"
+
+    elif (
+        "settings" in text
+        or "setting" in text
+    ):
+        os.system("start ms-settings:")
+        return "Opening Settings"
+
+    elif (
+        "command prompt" in text
+        or "cmd" in text
+    ):
+        subprocess.Popen("cmd")
+        return "Opening Command Prompt"
+
+    elif "powershell" in text:
+        subprocess.Popen("powershell")
+        return "Opening PowerShell"
+
+    elif "task manager" in text:
+        subprocess.Popen("taskmgr")
+        return "Opening Task Manager"
+
+    elif (
+        "file explorer" in text
+        or "explorer" in text
+    ):
+        subprocess.Popen("explorer")
+        return "Opening File Explorer"
+
+    # ----------------------
+    # WEB COMMANDS
+    # ----------------------
+
+    elif (
+        "youtube" in text
+        or "यूट्यूब" in text
+    ):
+        webbrowser.open(
+            "https://www.youtube.com"
+        )
         return "Opening YouTube"
 
-    elif "open google" in text:
-        webbrowser.open("https://www.google.com")
+    elif "google" in text:
+        webbrowser.open(
+            "https://www.google.com"
+        )
         return "Opening Google"
 
-    elif "open github" in text:
-        webbrowser.open("https://github.com")
+    elif "github" in text:
+        webbrowser.open(
+            "https://github.com"
+        )
         return "Opening GitHub"
 
-    elif "open gmail" in text:
-        webbrowser.open("https://mail.google.com")
+    elif "gmail" in text:
+        webbrowser.open(
+            "https://mail.google.com"
+        )
         return "Opening Gmail"
 
-    elif "open chatgpt" in text:
-        webbrowser.open("https://chat.openai.com")
+    elif "chatgpt" in text:
+        webbrowser.open(
+            "https://chat.openai.com"
+        )
         return "Opening ChatGPT"
 
+    # ----------------------
+    # SEARCH
+    # ----------------------
+
     elif "search" in text:
-        query = text.replace("search", "").strip()
+
+        query = (
+            text
+            .replace("search", "")
+            .strip()
+        )
 
         if query:
             webbrowser.open(
                 f"https://www.google.com/search?q={query}"
             )
             return f"Searching for {query}"
-
-    # ----------------------
-    # Open Desktop Apps
-    # ----------------------
-
-    elif "open chrome" in text:
-        os.startfile(
-            "C:/Program Files/Google/Chrome/Application/chrome.exe"
-        )
-        return "Opening Chrome"
-
-    elif "open notepad" in text:
-        subprocess.Popen("notepad")
-        return "Opening Notepad"
-
-    elif "open calculator" in text:
-        subprocess.Popen("calc")
-        return "Opening Calculator"
-
-    elif "open command prompt" in text or "open cmd" in text:
-        subprocess.Popen("cmd")
-        return "Opening Command Prompt"
-
-    elif "open powershell" in text:
-        subprocess.Popen("powershell")
-        return "Opening PowerShell"
-
-    elif "open file explorer" in text:
-        subprocess.Popen("explorer")
-        return "Opening File Explorer"
-
-    elif "open task manager" in text:
-        subprocess.Popen("taskmgr")
-        return "Opening Task Manager"
-
-    elif "open control panel" in text:
-        subprocess.Popen("control")
-        return "Opening Control Panel"
-
-    elif "open settings" in text:
-        os.system("start ms-settings:")
-        return "Opening Settings"
-
-    # ----------------------
-    # Media / Music
-    # ----------------------
-
-    elif "play music" in text:
-        music_folder = os.path.expanduser("~/Music")
-        os.startfile(music_folder)
-        return "Opening your music folder"
-
-    # ----------------------
-    # System Commands
-    # ----------------------
-
-    elif "lock computer" in text or "lock pc" in text:
-        os.system("rundll32.exe user32.dll,LockWorkStation")
-        return "Locking computer"
-
-    elif "shutdown pc" in text:
-        os.system("shutdown /s /t 10")
-        return "Shutting down in 10 seconds"
-
-    elif "restart pc" in text:
-        os.system("shutdown /r /t 10")
-        return "Restarting in 10 seconds"
-
-    elif "cancel shutdown" in text:
-        os.system("shutdown /a")
-        return "Shutdown cancelled"
-
-    # ----------------------
-    # Folder Commands
-    # ----------------------
-
-    elif "open downloads" in text:
-        os.startfile(os.path.expanduser("~/Downloads"))
-        return "Opening Downloads"
-
-    elif "open documents" in text:
-        os.startfile(os.path.expanduser("~/Documents"))
-        return "Opening Documents"
-
-    elif "open desktop" in text:
-        os.startfile(os.path.expanduser("~/Desktop"))
-        return "Opening Desktop"
-
-    elif "open pictures" in text:
-        os.startfile(os.path.expanduser("~/Pictures"))
-        return "Opening Pictures"
-
-    # ----------------------
-    # AI Project Shortcuts
-    # ----------------------
-
-    elif "open vs code" in text:
-        subprocess.Popen("code")
-        return "Opening Visual Studio Code"
-
-    elif "open terminal" in text:
-        subprocess.Popen("wt")
-        return "Opening Terminal"
-
-    # ----------------------
-    # Fallback
-    # ----------------------
 
     return None
