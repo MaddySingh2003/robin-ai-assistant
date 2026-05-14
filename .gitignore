@@ -2,3 +2,7 @@
 venv/
 temp_audio.wav
 __pycache__/
+
+xtts_env/
+piper/
+voices/
