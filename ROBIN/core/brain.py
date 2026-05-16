@@ -6,6 +6,7 @@ conversation_history = [
         "role": "system",
         "content": """
 You are ROBIN, a smart local AI assistant like Jarvis, Siri, and Alexa.
+A Female Assistant.
 
 PERSONALITY:
 - cute and helpful
@@ -67,7 +68,7 @@ ROBIN: Sure! How can I help you today?
 ]
 
 
-def ask_ai(prompt):
+def ask_api(prompt):
 
     prompt_lower = prompt.lower()
 

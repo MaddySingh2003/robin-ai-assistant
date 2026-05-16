@@ -1,51 +1,158 @@
-from core.listener import listen 
-from core.brain import ask_ai
+from core.listener import listen
+from core.brain import ask_api
 from core.speaker import speak
 from assistant.router import route_request
-
 
 
 print("ROBIN: Hello! I'm ROBIN, your AI assistant.")
 print("Say 'exit' to quit\n")
 
 
+# -------------------
+# Simple Hinglish Chat
+# -------------------
+
+simple_replies = {
+
+    "kya haal hai":
+        "Main theek hoon boss, aap batao?",
+
+    "kaise ho":
+        "Main badhiya hoon boss.",
+
+    "hello":
+        "Hello boss!",
+
+    "hi":
+        "Hi boss!",
+
+    "namaste":
+        "Namaste boss!",
+
+    "thank you":
+        "Welcome boss.",
+
+    "thanks":
+        "No problem boss."
+}
+
+
 try:
 
-  while True:
-    text=listen()
+    while True:
 
-    if not text:
-        print("😒 no speech detected")
-        continue
+        text = listen()
 
-    print("You:",text)
-    
-    if text.lower() == "exit":
-        print("ROBIN: Goodbye!")
-        break
+        if not text:
+            print("😒 no speech detected")
+            continue
 
-    result=route_request(text)
+        text = text.strip()
 
-    if result["type"] == "command":
+        print("You:", text)
 
-      if result["response"]:
-         speak(result["response"])
+        # Exit
+        if text.lower() == "exit":
+            speak("Goodbye boss")
+            print("ROBIN: Goodbye!")
+            break
 
-      else:
-          speak(
-            "Sorry, I couldn't understand "
-            "that command."
-          )
-    else:
-         # Force Hindi response if requested
-        if "hindi" in text.lower():
-           text = (
-               f"Answer only in Hindi: {text}"
+        # -------------------
+        # Route Commands
+        # -------------------
+
+        result = route_request(text)
+
+        if result["type"] == "command":
+
+            if result["response"]:
+                print(
+                    "ROBIN:",
+                    result["response"]
                 )
 
-        response = ask_ai(text)
+                speak(
+                    result["response"]
+                )
+
+            else:
+                speak(
+                    "Sorry, I couldn't "
+                    "understand that command."
+                )
+
+            continue
+
+        # -------------------
+        # Simple Hinglish Chat
+        # -------------------
+
+        clean_text = (
+            text.lower().strip()
+        )
+
+        if clean_text in simple_replies:
+
+            response = simple_replies[
+                clean_text
+            ]
+
+            print(
+                "ROBIN:",
+                response
+            )
+
+            speak(response)
+
+            continue
+
+        # -------------------
+        # Hindi Mode
+        # -------------------
+
+        if (
+            "talk to me in hindi"
+            in clean_text
+            or "speak hindi"
+            in clean_text
+            or "hindi me baat karo"
+            in clean_text
+        ):
+
+            response = (
+                "ठीक है, अब मैं हिंदी में बात करूँगा।"
+            )
+
+            print(
+                "ROBIN:",
+                response
+            )
+
+            speak(response)
+
+            continue
+
+        # Force Hindi answer
+        if (
+            "hindi" in clean_text
+            or "hinglish" in clean_text
+        ):
+            text = (
+                f"Answer in Hindi/Hinglish: "
+                f"{text}"
+            )
+
+        # -------------------
+        # AI Chat
+        # -------------------
+
+        response = ask_api(text)
+
+        print("ROBIN:", response)
 
         speak(response)
 
 except KeyboardInterrupt:
-    print("\nROBIN: Shutting down. Goodbye!")
+    print(
+        "\nROBIN: Shutting down. Goodbye!"
+    )

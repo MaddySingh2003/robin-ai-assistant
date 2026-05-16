@@ -2,10 +2,12 @@ from faster_whisper import WhisperModel
 import sounddevice as sd
 import scipy.io.wavfile as wav
 import numpy as np
+import os
 
 
+# Better model for Hinglish
 model = WhisperModel(
-    "medium",
+    "small",
     device="cpu",
     compute_type="int8"
 )
@@ -13,7 +15,7 @@ model = WhisperModel(
 
 def listen():
 
-    duration = 5
+    duration = 4
     sample_rate = 16000
 
     print("🎙️ Listening..., Speak now")
@@ -30,63 +32,92 @@ def listen():
     volume = np.abs(audio).mean()
     print(f"🔊 Volume: {volume}")
 
-    if volume < 20:
+    # Lower threshold
+    if volume < 5:
         print("😒 no speech detected")
         return None
 
     audio_path = "temp_audio.wav"
 
-    wav.write(audio_path, sample_rate, audio)
+    wav.write(
+        audio_path,
+        sample_rate,
+        audio
+    )
 
     print("⏹️ Processing speech...")
 
-    # Only English + Hindi/Hinglish
-    segments, info = model.transcribe(
-        audio_path,
-        beam_size=5,
-        language=None,
-        vad_filter=True,
-        initial_prompt="""
-        This assistant understands:
-        English,
-        Hindi,
-        Hinglish.
+    try:
 
-        Example phrases:
-        kya haal hai
-        youtube kholo
-        chrome kholo
-        mujhse hinglish mein baat karo
-        talk to me in hindi
-        open chrome
-        open youtube
-        """
-    )
+        # Force Hindi/English only
+        segments, info = model.transcribe(
+            audio_path,
+            beam_size=2,
+            best_of=2,
+            vad_filter=True,
+            language="hi",   # Hinglish works better
+            temperature=0.0,
 
-    text = " ".join(
-        segment.text for segment in segments
-    ).strip()
+            initial_prompt="""
+            This assistant understands only:
+            English, Hindi, Hinglish
 
-    detected_language = info.language
+            Example commands:
 
-    # Block weird languages
-    allowed_languages = ["en", "hi"]
-
-    if detected_language not in allowed_languages:
-        print(
-            f"⚠️ Unsupported language "
-            f"detected: {detected_language}"
+            chrome kholo
+            youtube kholo
+            open chrome
+            open youtube
+            kya haal hai
+            kaise ho
+            search AI tutorial
+            calculator kholo
+            google kholo
+            """
         )
 
-        # Treat Hinglish as Hindi/English
-        detected_language = "hi"
+        text = " ".join(
+            segment.text
+            for segment in segments
+        ).strip()
 
-    print(
-        f"🌍 Detected language: "
-        f"{detected_language}"
-    )
+        text = text.lower()
 
-    if not text:
+        # Clean weird outputs
+        bad_words = [
+            "arespace",
+            "disciplinary",
+            "indeer",
+            "chromos",
+            "mom",
+            "ipedia"
+        ]
+
+        for word in bad_words:
+            text = text.replace(
+                word,
+                ""
+            )
+
+        text = " ".join(text.split())
+
+        if not text:
+            return None
+
+        print(
+            "🌍 Language: Hindi/Hinglish"
+        )
+
+        print("📝 Heard:", text)
+
+        return text
+
+    except Exception as e:
+        print(
+            f"❌ Speech error: {e}"
+        )
         return None
 
-    return text
+    finally:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
