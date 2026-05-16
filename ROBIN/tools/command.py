@@ -10,7 +10,17 @@ def execute_command(text):
     # -------------------------
     # Hindi / Hinglish Mapping
     # -------------------------
+    if text == "chrome":
+      text = "open chrome"
 
+    elif text == "youtube":
+      text = "open youtube"
+
+    elif text == "settings":
+      text = "open settings"
+
+    elif text == "calculator":
+      text = "open calculator"
     replacements = {
 
         "खोलो": "open",

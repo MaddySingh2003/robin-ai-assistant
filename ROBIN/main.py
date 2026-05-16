@@ -2,9 +2,16 @@ from core.listener import listen
 from core.brain import ask_api
 from core.speaker import speak
 from assistant.router import route_request
+from core.wake_word import wait_for_wake_word
+import time
 
 
-print("ROBIN: Hello! I'm ROBIN, your AI assistant.")
+
+print(
+    "ROBIN: Hello! "
+    "I'm ROBIN, your AI assistant."
+)
+
 print("Say 'exit' to quit\n")
 
 
@@ -33,7 +40,16 @@ simple_replies = {
         "Welcome boss.",
 
     "thanks":
-        "No problem boss."
+        "No problem boss.",
+
+    "good morning":
+        "Good morning boss!",
+
+    "good night":
+        "Good night boss.",
+
+    "bye":
+        "Bye boss, take care!"
 }
 
 
@@ -41,20 +57,52 @@ try:
 
     while True:
 
-        text = listen()
+        # -------------------
+        # Wake Word
+        # -------------------
+
+        wait_for_wake_word()
+
+        speak("Yes boss?")
+        time.sleep(1.5)
+
+        # -------------------
+        # Listen Command
+        # -------------------
+
+        text = None
+
+        for _ in range(3):
+
+         text = listen()
+
+         if text:
+           break
+
+         print("Retry listening...")
 
         if not text:
-            print("😒 no speech detected")
-            continue
+          speak(
+        "I didn't hear anything."
+    )
+          continue
 
         text = text.strip()
 
         print("You:", text)
 
+        # -------------------
         # Exit
+        # -------------------
+
         if text.lower() == "exit":
+
             speak("Goodbye boss")
-            print("ROBIN: Goodbye!")
+
+            print(
+                "ROBIN: Goodbye!"
+            )
+
             break
 
         # -------------------
@@ -63,9 +111,13 @@ try:
 
         result = route_request(text)
 
-        if result["type"] == "command":
+        if (
+            result["type"]
+            == "command"
+        ):
 
             if result["response"]:
+
                 print(
                     "ROBIN:",
                     result["response"]
@@ -76,9 +128,11 @@ try:
                 )
 
             else:
+
                 speak(
-                    "Sorry, I couldn't "
-                    "understand that command."
+                    "Sorry boss, "
+                    "I couldn't understand "
+                    "that command."
                 )
 
             continue
@@ -93,9 +147,11 @@ try:
 
         if clean_text in simple_replies:
 
-            response = simple_replies[
-                clean_text
-            ]
+            response = (
+                simple_replies[
+                    clean_text
+                ]
+            )
 
             print(
                 "ROBIN:",
@@ -120,7 +176,9 @@ try:
         ):
 
             response = (
-                "ठीक है, अब मैं हिंदी में बात करूँगा।"
+                "ठीक है बॉस, "
+                "अब मैं हिंदी में "
+                "बात करूँगा।"
             )
 
             print(
@@ -132,13 +190,15 @@ try:
 
             continue
 
-        # Force Hindi answer
+        # Force Hindi/Hinglish
         if (
             "hindi" in clean_text
             or "hinglish" in clean_text
         ):
+
             text = (
-                f"Answer in Hindi/Hinglish: "
+                "Answer in "
+                "Hindi/Hinglish: "
                 f"{text}"
             )
 
@@ -148,11 +208,17 @@ try:
 
         response = ask_api(text)
 
-        print("ROBIN:", response)
+        print(
+            "ROBIN:",
+            response
+        )
 
         speak(response)
 
+
 except KeyboardInterrupt:
+
     print(
-        "\nROBIN: Shutting down. Goodbye!"
+        "\nROBIN: "
+        "Shutting down. Goodbye!"
     )

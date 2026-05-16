@@ -117,6 +117,33 @@ def listen():
             segment.text
             for segment in segments
         ).strip()
+        # Common Whisper mistakes
+
+        corrections = {
+
+    "pane chrome": "open chrome",
+    "pain chrome": "open chrome",
+    "payne chrome": "open chrome",
+
+    "hallow": "hello",
+    "halu": "hello",
+    "haaloo": "hello",
+
+    "rabin": "robin",
+    "robbin": "robin",
+
+    "kha haal hai": "kya haal hai",
+    "haal hai": "kya haal hai",
+}
+
+        text = text.lower().strip()
+
+        for wrong, correct in corrections.items():
+           if wrong in text:
+            text = text.replace(
+            wrong,
+            correct
+        )
 
         text = clean_text(text)
 
