@@ -6,7 +6,6 @@ from core.wake_word import wait_for_wake_word
 import time
 
 
-
 print(
     "ROBIN: Hello! "
     "I'm ROBIN, your AI assistant."
@@ -15,9 +14,9 @@ print(
 print("Say 'exit' to quit\n")
 
 
-# -------------------
-# Simple Hinglish Chat
-# -------------------
+# =====================================
+# SIMPLE HINGLISH CHAT
+# =====================================
 
 simple_replies = {
 
@@ -32,6 +31,12 @@ simple_replies = {
 
     "hi":
         "Hi boss!",
+
+    "hello robin":
+        "Hello boss!",
+
+    "hey robin":
+        "Yes boss?",
 
     "namaste":
         "Namaste boss!",
@@ -53,104 +58,232 @@ simple_replies = {
 }
 
 
+# =====================================
+# EXIT WORDS
+# =====================================
+
+sleep_words = [
+
+    "bye",
+    "goodbye",
+    "go to sleep",
+    "sleep",
+    "see you later",
+    "talk to you later",
+    "stop",
+    "nothing else",
+    "no more",
+    "i am done",
+    "thanks",
+    "thank you"
+]
+
+exit_words = [
+
+    "exit",
+    "quit",
+    "shutdown",
+    "shut down",
+    "turn off"
+]
+
+
 try:
 
     while True:
 
-        # -------------------
-        # Wake Word
-        # -------------------
+        # =====================================
+        # WAIT FOR WAKE WORD
+        # =====================================
 
         wait_for_wake_word()
 
         speak("Yes boss?")
-        time.sleep(1.5)
+        time.sleep(1)
 
-        # -------------------
-        # Listen Command
-        # -------------------
+        # =====================================
+        # ACTIVE MODE
+        # =====================================
 
-        text = None
+        while True:
 
-        for _ in range(3):
+            text = None
 
-         text = listen()
+            # Try listening 3 times
+            for _ in range(3):
 
-         if text:
-           break
+                text = listen()
 
-         print("Retry listening...")
+                if text:
+                    break
 
-        if not text:
-          speak(
-        "I didn't hear anything."
-    )
-          continue
+                print(
+                    "Retry listening..."
+                )
 
-        text = text.strip()
+            # Nothing heard
+            if not text:
 
-        print("You:", text)
+                speak(
+                    "Going back to sleep."
+                )
 
-        # -------------------
-        # Exit
-        # -------------------
+                break
 
-        if text.lower() == "exit":
-
-            speak("Goodbye boss")
+            text = text.strip()
 
             print(
-                "ROBIN: Goodbye!"
+                "You:",
+                text
             )
 
-            break
+            clean_text = (
+                text.lower().strip()
+            )
 
-        # -------------------
-        # Route Commands
-        # -------------------
+            # =====================================
+            # EXIT APP
+            # =====================================
 
-        result = route_request(text)
+            if clean_text in exit_words:
 
-        if (
-            result["type"]
-            == "command"
-        ):
+                speak(
+                    "Goodbye boss"
+                )
 
-            if result["response"]:
+                print(
+                    "ROBIN: Goodbye!"
+                )
+
+                exit()
+
+            # =====================================
+            # GO TO SLEEP
+            # =====================================
+
+            if clean_text in sleep_words:
+
+                speak(
+                    "Going back to sleep boss."
+                )
+
+                break
+
+            # =====================================
+            # SIMPLE CHAT
+            # =====================================
+
+            if clean_text in simple_replies:
+
+                response = (
+                    simple_replies[
+                        clean_text
+                    ]
+                )
 
                 print(
                     "ROBIN:",
-                    result["response"]
+                    response
                 )
 
-                speak(
-                    result["response"]
+                speak(response)
+
+                continue
+
+            # =====================================
+            # COMMAND ROUTER
+            # =====================================
+
+            result = (
+                route_request(text)
+            )
+
+            print(result)
+
+            if (
+                result["type"]
+                == "command"
+            ):
+
+                response = (
+                    result.get(
+                        "response"
+                    )
                 )
 
-            else:
+                if response:
 
-                speak(
-                    "Sorry boss, "
-                    "I couldn't understand "
-                    "that command."
+                    print(
+                        "ROBIN:",
+                        response
+                    )
+
+                    speak(response)
+
+                else:
+
+                    speak(
+                        "Sorry boss, "
+                        "I could not "
+                        "understand "
+                        "that command."
+                    )
+
+                continue
+
+            # =====================================
+            # HINDI MODE
+            # =====================================
+
+            if (
+
+                "talk to me in hindi"
+                in clean_text
+
+                or "speak hindi"
+                in clean_text
+
+                or "hindi me baat karo"
+                in clean_text
+            ):
+
+                response = (
+                    "ठीक है बॉस, "
+                    "अब मैं हिंदी में "
+                    "बात करूँगा।"
                 )
 
-            continue
+                print(
+                    "ROBIN:",
+                    response
+                )
 
-        # -------------------
-        # Simple Hinglish Chat
-        # -------------------
+                speak(response)
 
-        clean_text = (
-            text.lower().strip()
-        )
+                continue
 
-        if clean_text in simple_replies:
+            # Force Hindi / Hinglish
+
+            if (
+                "hindi"
+                in clean_text
+
+                or "hinglish"
+                in clean_text
+            ):
+
+                text = (
+                    "Answer in "
+                    "Hindi/Hinglish: "
+                    f"{text}"
+                )
+
+            # =====================================
+            # AI CHAT
+            # =====================================
 
             response = (
-                simple_replies[
-                    clean_text
-                ]
+                ask_api(text)
             )
 
             print(
@@ -159,66 +292,12 @@ try:
             )
 
             speak(response)
-
-            continue
-
-        # -------------------
-        # Hindi Mode
-        # -------------------
-
-        if (
-            "talk to me in hindi"
-            in clean_text
-            or "speak hindi"
-            in clean_text
-            or "hindi me baat karo"
-            in clean_text
-        ):
-
-            response = (
-                "ठीक है बॉस, "
-                "अब मैं हिंदी में "
-                "बात करूँगा।"
-            )
-
-            print(
-                "ROBIN:",
-                response
-            )
-
-            speak(response)
-
-            continue
-
-        # Force Hindi/Hinglish
-        if (
-            "hindi" in clean_text
-            or "hinglish" in clean_text
-        ):
-
-            text = (
-                "Answer in "
-                "Hindi/Hinglish: "
-                f"{text}"
-            )
-
-        # -------------------
-        # AI Chat
-        # -------------------
-
-        response = ask_api(text)
-
-        print(
-            "ROBIN:",
-            response
-        )
-
-        speak(response)
 
 
 except KeyboardInterrupt:
 
     print(
         "\nROBIN: "
-        "Shutting down. Goodbye!"
+        "Shutting down. "
+        "Goodbye!"
     )

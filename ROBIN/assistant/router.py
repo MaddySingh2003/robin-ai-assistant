@@ -5,46 +5,72 @@ def route_request(text):
 
     text = text.lower().strip()
 
-    # English command words
-    open_keywords = [
+    print(
+        f"📌 Routing text: {text}"
+    )
+
+    # -------------------
+    # Force Commands
+    # -------------------
+
+    command_keywords = [
+
+        # English
         "open",
         "launch",
         "start",
         "search",
-        "find"
-    ]
+        "find",
 
-    # Hindi / Hinglish command words
-    hindi_keywords = [
+        # Hindi/Hinglish
         "kholo",
         "खोलो",
+        "chaloo karo",
         "chalu karo",
         "चालू करो",
-        "search karo",
         "ढूंढो",
-        "खोजो"
+        "खोजो",
+
+        # direct app names
+        "chrome",
+        "youtube",
+        "google",
+        "calculator",
+        "settings",
+        "notepad"
     ]
 
-    all_keywords = (
-        open_keywords +
-        hindi_keywords
+    is_command = any(
+        keyword in text
+        for keyword in command_keywords
     )
 
-    # Check if command-like sentence
-    if any(
-        keyword in text
-        for keyword in all_keywords
-    ):
+    print(
+        f"⚡ Is command: {is_command}"
+    )
 
-        command_result = execute_command(text)
+    # -------------------
+    # Execute command
+    # -------------------
 
-        if command_result:
-            return {
-                "type": "command",
-                "response": command_result
-            }
+    if is_command:
 
-    # Normal AI chat
+        response = execute_command(text)
+
+        print(
+            f"⚡ Command result: {response}"
+        )
+
+        return {
+            "type": "command",
+            "response": response
+        }
+
+    # -------------------
+    # AI Chat
+    # -------------------
+
     return {
-        "type": "chat"
+        "type": "chat",
+        "response": None
     }

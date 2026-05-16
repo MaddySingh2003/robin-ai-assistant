@@ -46,7 +46,7 @@ def clean_text(text):
 
 def listen():
 
-    duration = 7   # increased
+    duration = 7  # increased
     sample_rate = 16000
 
     print("🎙️ Listening..., Speak now")
@@ -83,11 +83,12 @@ def listen():
             audio_path,
 
             # Better accuracy
-            beam_size=5,
+            beam_size=8,
             best_of=5,
 
             vad_filter=True,
             temperature=0,
+            condition_on_previous_text=False,
 
             # Hinglish focused
             language="hi",

@@ -1,35 +1,64 @@
 from core.listener import listen
 
 
-WAKE_WORDS=[   "robin",
-    "hello robin",
-    "hey robin",
-    "hi robin",
-
-    # Whisper mistakes
-    "rabin",
-    "robbin",
-    "robin robin",
-    "hallow robin",
-    "halu robin",
-    "hello rabin"
-]
-
 def wait_for_wake_word():
-    
+
     print("😴 Waiting for wake word...")
+
+    wake_words = [
+
+        "robin",
+        "robeen",
+        "rabin",
+        "robbin",
+        "robbin",
+
+        "hello robin",
+        "hello robeen",
+        "hey robin",
+        "hi robin",
+
+        "halo robin",
+        "halo robeen",
+        "helo robin",
+
+        "robin robin",
+        "hello rabin"
+    ]
 
     while True:
 
-        text=listen()
+        text = listen()
+
         if not text:
             continue
 
-        text=text.lower().strip()
+        text = text.lower().strip()
 
-        print(f"👂 Heard: {text}")
+        print("👂 Heard:", text)
 
-        for wake_word in WAKE_WORDS:
-            if wake_word in text:
-                print("🔔 Wake word detected!")
-                return True
+        # Fuzzy matching
+        if any(
+            wake in text
+            for wake in wake_words
+        ):
+
+            print(
+                "🔔 Wake word detected!"
+            )
+
+            return
+
+        # Backup detection
+        if (
+            "rob" in text
+            or "bin" in text
+            or "been" in text
+            or "robe" in text
+        ):
+
+            print(
+                "🔔 Wake word detected!"
+            )
+
+            return

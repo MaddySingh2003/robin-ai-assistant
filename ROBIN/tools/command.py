@@ -7,45 +7,61 @@ def execute_command(text):
 
     text = text.lower().strip()
 
-    # -------------------------
-    # Hindi / Hinglish Mapping
-    # -------------------------
-    if text == "chrome":
-      text = "open chrome"
+    # ==========================
+    # SMART SHORTCUTS
+    # ==========================
 
-    elif text == "youtube":
-      text = "open youtube"
+    shortcuts = {
 
-    elif text == "settings":
-      text = "open settings"
+        "chrome": "open chrome",
+        "youtube": "open youtube",
+        "google": "open google",
+        "settings": "open settings",
+        "calculator": "open calculator",
+        "notepad": "open notepad",
+        "cmd": "open cmd",
+        "terminal": "open terminal",
+    }
 
-    elif text == "calculator":
-      text = "open calculator"
+    if text in shortcuts:
+        text = shortcuts[text]
+
+    # ==========================
+    # HINDI / HINGLISH SUPPORT
+    # ==========================
+
     replacements = {
 
+        # Open
         "खोलो": "open",
         "खोल": "open",
+        "kholo": "open",
         "chalu karo": "open",
-        "चालू करो": "open",
         "start karo": "open",
 
-        "यूट्यूब": "youtube",
+        # Apps
         "क्रोम": "chrome",
+        "यूट्यूब": "youtube",
         "गूगल": "google",
+        "सेटिंग्स": "settings",
         "कैलकुलेटर": "calculator",
         "नोटपैड": "notepad",
-        "सेटिंग्स": "settings",
+        "कमांड": "cmd",
 
         # Hinglish
-        "youtube kholo": "open youtube",
         "chrome kholo": "open chrome",
+        "youtube kholo": "open youtube",
         "google kholo": "open google",
+        "settings kholo": "open settings",
         "calculator kholo": "open calculator",
+        "cmd kholo": "open cmd",
+        "terminal kholo": "open terminal",
 
         # Hindi
-        "यूट्यूब खोलो": "open youtube",
         "क्रोम खोलो": "open chrome",
+        "यूट्यूब खोलो": "open youtube",
         "गूगल खोलो": "open google",
+        "सेटिंग्स खोलो": "open settings",
     }
 
     for old, new in replacements.items():
@@ -53,9 +69,9 @@ def execute_command(text):
 
     print(f"Normalized command: {text}")
 
-    # =================================
-    # SEARCH YOUTUBE (FIRST PRIORITY)
-    # =================================
+    # ==========================
+    # YOUTUBE SEARCH
+    # ==========================
 
     if "search" in text and "youtube" in text:
 
@@ -80,9 +96,9 @@ def execute_command(text):
                 f"Searching {query} on YouTube"
             )
 
-    # =================================
-    # NORMAL SEARCH
-    # =================================
+    # ==========================
+    # GOOGLE SEARCH
+    # ==========================
 
     elif "search" in text:
 
@@ -93,6 +109,7 @@ def execute_command(text):
         )
 
         if query:
+
             webbrowser.open(
                 f"https://www.google.com/search?q={query}"
             )
@@ -103,89 +120,104 @@ def execute_command(text):
 
         return "What should I search?"
 
-    # =================================
+    # ==========================
     # DESKTOP APPS
-    # =================================
+    # ==========================
 
-    elif "chrome" in text:
+    elif "open chrome" in text:
 
-        chrome_path = (
-            r"C:\Program Files\Google"
-            r"\Chrome\Application\chrome.exe"
-        )
+        chrome_paths = [
 
-        if os.path.exists(chrome_path):
-            subprocess.Popen(chrome_path)
-            return "Opening Chrome"
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        ]
+
+        for path in chrome_paths:
+
+            if os.path.exists(path):
+                subprocess.Popen(path)
+                return "Opening Chrome"
 
         return "Chrome not found"
 
-    elif "calculator" in text:
-        subprocess.Popen("calc")
-        return "Opening Calculator"
+    elif "open cmd" in text:
 
-    elif "notepad" in text:
-        subprocess.Popen("notepad")
-        return "Opening Notepad"
-
-    elif (
-        "settings" in text
-        or "setting" in text
-    ):
-        os.system("start ms-settings:")
-        return "Opening Settings"
-
-    elif (
-        "command prompt" in text
-        or "cmd" in text
-    ):
         subprocess.Popen("cmd")
         return "Opening Command Prompt"
 
+    elif "open terminal" in text:
+
+        subprocess.Popen("wt")
+        return "Opening Terminal"
+
+    elif "open calculator" in text:
+
+        subprocess.Popen("calc")
+        return "Opening Calculator"
+
+    elif "open notepad" in text:
+
+        subprocess.Popen("notepad")
+        return "Opening Notepad"
+
+    elif "open settings" in text:
+
+        os.system("start ms-settings:")
+        return "Opening Settings"
+
     elif "powershell" in text:
+
         subprocess.Popen("powershell")
         return "Opening PowerShell"
+
+    elif "task manager" in text:
+
+        subprocess.Popen("taskmgr")
+        return "Opening Task Manager"
 
     elif (
         "file explorer" in text
         or "explorer" in text
     ):
+
         subprocess.Popen("explorer")
         return "Opening File Explorer"
 
-    elif "task manager" in text:
-        subprocess.Popen("taskmgr")
-        return "Opening Task Manager"
-
-    # =================================
+    # ==========================
     # WEB COMMANDS
-    # =================================
+    # ==========================
 
-    elif "youtube" in text:
+    elif "open youtube" in text:
+
         webbrowser.open(
             "https://www.youtube.com"
         )
         return "Opening YouTube"
 
-    elif "google" in text:
+    elif "open google" in text:
+
         webbrowser.open(
             "https://www.google.com"
         )
         return "Opening Google"
 
     elif "github" in text:
+
         webbrowser.open(
             "https://github.com"
         )
         return "Opening GitHub"
 
     elif "gmail" in text:
+
         webbrowser.open(
             "https://mail.google.com"
         )
         return "Opening Gmail"
 
     elif "chatgpt" in text:
+
         webbrowser.open(
             "https://chat.openai.com"
         )
