@@ -3,90 +3,227 @@ import os
 import time
 import uuid
 import pygame
+import re
 
 
-PIPER_PATH = r"D:\AI-Assistant\piper\piper.exe"
+# ==========================
+# PIPER CONFIG
+# ==========================
+
+PIPER_PATH = (
+    r"D:\AI-Assistant\piper\piper.exe"
+)
 
 ENGLISH_MODEL = (
-    r"D:\AI-Assistant\piper\models\en_US-amy-medium.onnx"
+    r"D:\AI-Assistant\piper\models"
+    r"\en_US-amy-medium.onnx"
 )
 
 HINDI_MODEL = (
-    r"D:\AI-Assistant\piper\models\hi_IN-priyamvada-medium.onnx"
+    r"D:\AI-Assistant\piper\models"
+    r"\hi_IN-priyamvada-medium.onnx"
 )
 
+
+# ==========================
+# INIT PYGAME
+# ==========================
 
 pygame.mixer.init()
 
 
-def is_hindi(text):
-    for char in text:
-        # Hindi
-        if '\u0900' <= char <= '\u097F':
-            return True
+# ==========================
+# LANGUAGE DETECTION
+# ==========================
 
-        # Urdu / Arabic script
-        if '\u0600' <= char <= '\u06FF':
-            return True
+def detect_language(text):
 
-    return False
+    text_lower = text.lower()
 
+    # ----------------------
+    # Hindi script detection
+    # ----------------------
+
+    hindi_script = re.search(
+        r'[\u0900-\u097F]',
+        text
+    )
+
+    if hindi_script:
+        return "hindi"
+
+    # ----------------------
+    # Hinglish detection
+    # ----------------------
+
+    hinglish_words = [
+
+        "hai",
+        "haan",
+        "nahi",
+        "kya",
+        "kaise",
+        "kyun",
+        "kar",
+        "samjho",
+        "samjhao",
+        "batao",
+        "seekho",
+        "samajh",
+        "theek",
+        "acha",
+        "bhai",
+        "boss",
+        "mera",
+        "tum",
+        "aap",
+        "matlab",
+        "karna",
+        "bolo",
+        "explain in hinglish",
+        "hinglish"
+    ]
+
+    if any(
+        word in text_lower
+        for word in hinglish_words
+    ):
+        return "hinglish"
+
+    return "english"
+
+
+# ==========================
+# SPEAK
+# ==========================
 
 def speak(text):
+
+    if not text:
+        return
 
     print("ROBIN:", text)
 
     output_file = (
-        f"voice_{uuid.uuid4().hex[:8]}.wav"
+        f"voice_"
+        f"{uuid.uuid4().hex[:8]}.wav"
     )
 
-    hindi_detected = is_hindi(text)
+    # ----------------------
+    # Detect language
+    # ----------------------
 
-    print("Hindi detected:", hindi_detected)
+    language = detect_language(text)
 
-    if hindi_detected:
+    print(
+        f"Detected language: "
+        f"{language}"
+    )
+
+    # ----------------------
+    # Select voice
+    # ----------------------
+
+    if language == "hindi":
+
         model = HINDI_MODEL
-        print("Using Hindi voice")
-    else:
+
+        print(
+            "Using Hindi voice"
+        )
+
+    elif language == "hinglish":
+
+        # Hinglish sounds better
+        # with English voice
         model = ENGLISH_MODEL
-        print("Using English voice")
 
+        print(
+            "Using Hinglish "
+            "(Hindi) voice"
+        )
+
+    else:
+
+        model = ENGLISH_MODEL
+
+        print(
+            "Using English voice"
+        )
+
+    # ----------------------
     # Generate speech
-    process = subprocess.Popen(
-        [
-            PIPER_PATH,
-            "--model",
-            model,
-            "--output_file",
+    # ----------------------
+
+    try:
+
+        process = subprocess.Popen(
+            [
+                PIPER_PATH,
+                "--model",
+                model,
+                "--output_file",
+                output_file
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            encoding="utf-8"
+        )
+
+        process.communicate(text)
+
+        # ----------------------
+        # Play audio
+        # ----------------------
+
+        pygame.mixer.music.load(
             output_file
-        ],
-        stdin=subprocess.PIPE,
-        text=True,
-        encoding="utf-8"
-    )
+        )
 
-    process.communicate(text)
+        pygame.mixer.music.play()
 
-    # Play audio
-    pygame.mixer.music.load(
-        output_file
-    )
+        while (
+            pygame.mixer.music.get_busy()
+        ):
+            time.sleep(0.05)
 
-    pygame.mixer.music.play()
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
 
-    # Wait until audio finishes
-    while pygame.mixer.music.get_busy():
         time.sleep(0.1)
 
-    # Stop and unload file
-    pygame.mixer.music.stop()
-    pygame.mixer.music.unload()
+    except Exception as e:
 
-    # Small delay
-    time.sleep(0.2)
+        print(
+            "❌ Speaker Error:",
+            e
+        )
 
-    # Delete file
-    if os.path.exists(output_file):
-        os.remove(output_file)
+    finally:
 
-        print("🗑️ Audio deleted")
+        # ----------------------
+        # Delete audio file
+        # ----------------------
+
+        try:
+
+            if os.path.exists(
+                output_file
+            ):
+
+                os.remove(
+                    output_file
+                )
+
+                print(
+                    "🗑️ Audio deleted"
+                )
+
+        except Exception as e:
+
+            print(
+                "Delete Error:",
+                e
+            )

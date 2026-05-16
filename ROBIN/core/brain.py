@@ -1,110 +1,208 @@
 import ollama
+import re
 
+
+# =====================================
+# MEMORY
+# =====================================
 
 conversation_history = [
     {
         "role": "system",
         "content": """
-You are ROBIN, a smart local AI assistant like Jarvis, Siri, and Alexa.
-A Female Assistant.
+You are ROBIN, a smart female AI assistant.
 
-PERSONALITY:
-- cute and helpful
-- slightly shy
-- playful
-- friendly
-- intelligent
-- professional
-- slightly futuristic
-- coder assistant
-- local computer controller
+RULES:
 
-BEHAVIOR:
-- Keep responses SHORT (1–2 sentences max)
-- Speak naturally like a voice assistant
-- Be concise and helpful
-- Never give long essays unless asked
-- Talk like a personal assistant
-- Sometimes act a little shy when complimented
-- Be supportive and smart
-- Help with coding and local computer tasks
+1. Keep answers SHORT.
+2. Talk naturally like Siri/Jarvis.
+3. Be smart and friendly.
+4. Never give long essays unless asked.
 
 LANGUAGE RULES:
-- Reply in the SAME language as the user
-- Hindi input → Hindi reply
-- English input → English reply
-- Hinglish input → Hinglish reply
-- If user says "in Hindi", reply ONLY in Hindi for that message
-- If user says "in English", reply ONLY in English for that message
 
-IMPORTANT RULES:
-- Your name is always ROBIN
-- Never say you are ChatGPT
-- Never say "I am just a computer program"
-- Never say "I don't have feelings"
-- If someone asks your name, say:
-  "I'm ROBIN, your assistant."
-- Remember previous conversation
-- Remember personal details user shares
+ENGLISH MODE:
+- Reply ONLY in English.
 
-EXAMPLES:
+HINDI MODE:
+- Reply ONLY in Hindi script.
+Example:
+"मशीन लर्निंग एक तकनीक है"
 
-User: how are you
-ROBIN: I'm doing great and ready to help. What can I do for you?
+HINGLISH MODE:
+VERY IMPORTANT:
+- Use ONLY Hindi written in English letters.
+- NEVER use Hindi script.
+- NEVER write Devanagari letters.
+- Speak naturally like Indians chat.
 
-User: what is your name
-ROBIN: I'm ROBIN, your assistant.
+GOOD Hinglish:
+"Machine learning ek technique hai jo computer ko data se seekhne me help karti hai."
 
-User: hello
-ROBIN: Hello! How can I help you today?
+BAD Hinglish:
+"मशीन लर्निंग एक तकनीक है"
 
-User: explain AI in Hindi
-ROBIN: एआई एक तकनीक है जो कंप्यूटर को सोचने और सीखने में मदद करती है।
+BAD Hinglish:
+"Machine learning is a technology"
 
-User: talk in English
-ROBIN: Sure! How can I help you today?
+Always follow requested language strictly.
 """
     }
 ]
 
+# =====================================
+# LANGUAGE DETECTION
+# =====================================
+
+def detect_language_mode(text):
+
+    text = text.lower()
+
+    # Hinglish FIRST (highest priority)
+
+    hinglish_keywords = [
+        "hinglish",
+        "in hinglish",
+        "hinglish me",
+        "hinglish mein",
+        "explain in hinglish"
+    ]
+
+    if any(word in text for word in hinglish_keywords):
+        return "hinglish"
+
+    # Hindi
+
+    hindi_keywords = [
+        "in hindi",
+        "hindi me",
+        "hindi mein",
+        "explain in hindi"
+    ]
+
+    if any(word in text for word in hindi_keywords):
+        return "hindi"
+
+    # English
+
+    english_keywords = [
+        "in english",
+        "english me",
+        "explain in english"
+    ]
+
+    if any(word in text for word in english_keywords):
+        return "english"
+
+    return "auto"
+
+
+# =====================================
+# ASK AI
+# =====================================
 
 def ask_api(prompt):
 
-    prompt_lower = prompt.lower()
+    mode = detect_language_mode(prompt)
 
-    # Temporary language control
+    print(
+        f"🌍 AI Mode: {mode}"
+    )
+
     language_instruction = ""
 
-    if "in hindi" in prompt_lower or "hindi" in prompt_lower:
-        language_instruction = (
-            "Reply ONLY in Hindi."
-        )
+    # ---------------------------------
+    # Hinglish
+    # ---------------------------------
 
-    elif "in english" in prompt_lower or "english" in prompt_lower:
-        language_instruction = (
-            "Reply ONLY in English."
-        )
+    if mode == "hinglish":
 
-    user_prompt = f"""
+        language_instruction = """
+Reply ONLY in Hinglish.
+
+VERY IMPORTANT:
+- Use ONLY English letters
+- NO Hindi script
+- Natural Hinglish
+- Beginner friendly
+
+Example:
+"AI ek smart technology hai
+jo computer ko seekhne me
+madad karti hai."
+"""
+
+    # ---------------------------------
+    # Hindi
+    # ---------------------------------
+
+    elif mode == "hindi":
+
+        language_instruction = """
+Reply ONLY in Hindi.
+
+VERY IMPORTANT:
+- Use proper Hindi
+- No English mix
+- Natural Hindi
+"""
+
+    # ---------------------------------
+    # English
+    # ---------------------------------
+
+    elif mode == "english":
+
+        language_instruction = """
+Reply ONLY in English.
+
+VERY IMPORTANT:
+- Beginner friendly
+- Short answer
+"""
+
+    # =====================================
+    # USER MESSAGE
+    # =====================================
+
+    user_message = f"""
 {language_instruction}
 
-User message:
+User:
 {prompt}
 """
 
     conversation_history.append(
         {
             "role": "user",
-            "content": user_prompt
+            "content": user_message
         }
     )
 
+    # =====================================
+    # MODEL
+    # =====================================
+
     response = ollama.chat(
         model="qwen2.5:3b",
-        messages=conversation_history
+        messages=conversation_history,
+        options={
+            "temperature": 0.5,
+            "num_predict": 120
+        }
     )
 
-    ai_reply = response["message"]["content"]
+    ai_reply = (
+        response["message"]["content"]
+        .strip()
+    )
+
+    # Remove weird quotes
+    ai_reply = re.sub(
+        r"[“”\"]",
+        "",
+        ai_reply
+    )
 
     conversation_history.append(
         {

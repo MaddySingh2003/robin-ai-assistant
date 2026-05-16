@@ -3,8 +3,14 @@ from core.brain import ask_api
 from core.speaker import speak
 from assistant.router import route_request
 from core.wake_word import wait_for_wake_word
-import time
 
+import time
+import sys
+
+
+# =====================================
+# STARTUP
+# =====================================
 
 print(
     "ROBIN: Hello! "
@@ -15,7 +21,7 @@ print("Say 'exit' to quit\n")
 
 
 # =====================================
-# SIMPLE HINGLISH CHAT
+# SIMPLE REPLIES
 # =====================================
 
 simple_replies = {
@@ -51,32 +57,13 @@ simple_replies = {
         "Good morning boss!",
 
     "good night":
-        "Good night boss.",
-
-    "bye":
-        "Bye boss, take care!"
+        "Good night boss!"
 }
 
 
 # =====================================
-# EXIT WORDS
+# EXIT COMMANDS
 # =====================================
-
-sleep_words = [
-
-    "bye",
-    "goodbye",
-    "go to sleep",
-    "sleep",
-    "see you later",
-    "talk to you later",
-    "stop",
-    "nothing else",
-    "no more",
-    "i am done",
-    "thanks",
-    "thank you"
-]
 
 exit_words = [
 
@@ -84,9 +71,109 @@ exit_words = [
     "quit",
     "shutdown",
     "shut down",
-    "turn off"
+    "turn off",
+    "close robin",
+    "bye robin",
+    "bye bye robin",
+    "goodbye robin",
+    "ok robin bye",
 ]
 
+
+# =====================================
+# SLEEP COMMANDS
+# =====================================
+
+sleep_words = [
+
+    "sleep",
+    "go to sleep",
+    "stop listening",
+    "nothing else",
+    "no more",
+    "see you later",
+    "talk to you later",
+]
+
+
+# =====================================
+# LANGUAGE MODE
+# =====================================
+
+def build_prompt(text, clean_text):
+
+    # Hinglish Mode
+    if (
+        "in hinglish" in clean_text
+        or "hinglish me" in clean_text
+        or "hinglish mein" in clean_text
+        or "explain in hinglish" in clean_text
+    ):
+
+        return f"""
+Explain in SIMPLE Hinglish.
+
+STRICT RULES:
+- Hindi written ONLY in English letters
+- NEVER use Hindi script
+- NEVER use Devanagari
+- Speak naturally like Indians
+- Keep response short
+- Beginner friendly
+
+Question:
+{text}
+"""
+
+    # Hindi Mode
+    elif (
+        "in hindi" in clean_text
+        or "hindi me" in clean_text
+        or "hindi mein" in clean_text
+        or "explain in hindi" in clean_text
+    ):
+
+        return f"""
+Explain ONLY in Hindi.
+
+STRICT RULES:
+- Use ONLY Hindi language
+- Natural Hindi
+- No English
+- Short answer
+- Beginner friendly
+
+Question:
+{text}
+"""
+
+    # English Mode
+    elif (
+        "in english" in clean_text
+        or "english me" in clean_text
+        or "english mein" in clean_text
+        or "explain in english" in clean_text
+    ):
+
+        return f"""
+Explain in SIMPLE English.
+
+STRICT RULES:
+- Beginner friendly
+- Short explanation
+- Natural English
+- Voice assistant style
+
+Question:
+{text}
+"""
+
+    return text
+
+
+# =====================================
+# MAIN LOOP
+# =====================================
 
 try:
 
@@ -98,18 +185,20 @@ try:
 
         wait_for_wake_word()
 
-        speak("Yes boss?")
-        time.sleep(1)
+        # better sounding
+        speak("Ji boss?")
+
+        time.sleep(0.5)
 
         # =====================================
-        # ACTIVE MODE
+        # ACTIVE LISTENING MODE
         # =====================================
 
         while True:
 
             text = None
 
-            # Try listening 3 times
+            # Retry 3 times
             for _ in range(3):
 
                 text = listen()
@@ -121,11 +210,11 @@ try:
                     "Retry listening..."
                 )
 
-            # Nothing heard
+            # No speech
             if not text:
 
                 speak(
-                    "Going back to sleep."
+                    "Going back to sleep boss."
                 )
 
                 break
@@ -142,26 +231,32 @@ try:
             )
 
             # =====================================
-            # EXIT APP
+            # EXIT ROBIN
             # =====================================
 
-            if clean_text in exit_words:
+            if any(
+                word in clean_text
+                for word in exit_words
+            ):
 
                 speak(
-                    "Goodbye boss"
+                    "Goodbye boss."
                 )
 
                 print(
                     "ROBIN: Goodbye!"
                 )
 
-                exit()
+                sys.exit()
 
             # =====================================
             # GO TO SLEEP
             # =====================================
 
-            if clean_text in sleep_words:
+            if any(
+                word in clean_text
+                for word in sleep_words
+            ):
 
                 speak(
                     "Going back to sleep boss."
@@ -191,7 +286,7 @@ try:
                 continue
 
             # =====================================
-            # COMMAND ROUTER
+            # COMMANDS
             # =====================================
 
             result = (
@@ -224,7 +319,7 @@ try:
 
                     speak(
                         "Sorry boss, "
-                        "I could not "
+                        "I couldn't "
                         "understand "
                         "that command."
                     )
@@ -232,58 +327,16 @@ try:
                 continue
 
             # =====================================
-            # HINDI MODE
+            # AI MODE
             # =====================================
 
-            if (
+            final_prompt = build_prompt(
+                text,
+                clean_text
+            )
 
-                "talk to me in hindi"
-                in clean_text
-
-                or "speak hindi"
-                in clean_text
-
-                or "hindi me baat karo"
-                in clean_text
-            ):
-
-                response = (
-                    "ठीक है बॉस, "
-                    "अब मैं हिंदी में "
-                    "बात करूँगा।"
-                )
-
-                print(
-                    "ROBIN:",
-                    response
-                )
-
-                speak(response)
-
-                continue
-
-            # Force Hindi / Hinglish
-
-            if (
-                "hindi"
-                in clean_text
-
-                or "hinglish"
-                in clean_text
-            ):
-
-                text = (
-                    "Answer in "
-                    "Hindi/Hinglish: "
-                    f"{text}"
-                )
-
-            # =====================================
-            # AI CHAT
-            # =====================================
-
-            response = (
-                ask_api(text)
+            response = ask_api(
+                final_prompt
             )
 
             print(
@@ -298,6 +351,5 @@ except KeyboardInterrupt:
 
     print(
         "\nROBIN: "
-        "Shutting down. "
-        "Goodbye!"
+        "Shutting down. Goodbye!"
     )
