@@ -43,11 +43,61 @@ def execute_command(text):
 
     print(f"Normalized command: {text}")
 
-    # ----------------------
-    # DESKTOP APPS FIRST
-    # ----------------------
+    # =================================
+    # SEARCH YOUTUBE (FIRST PRIORITY)
+    # =================================
 
-    if "chrome" in text:
+    if "search" in text and "youtube" in text:
+
+        query = (
+            text
+            .replace("search", "")
+            .replace("on youtube", "")
+            .replace("youtube", "")
+            .strip()
+        )
+
+        if query:
+
+            url = (
+                "https://www.youtube.com/results?"
+                f"search_query={query}"
+            )
+
+            webbrowser.open(url)
+
+            return (
+                f"Searching {query} on YouTube"
+            )
+
+    # =================================
+    # NORMAL SEARCH
+    # =================================
+
+    elif "search" in text:
+
+        query = (
+            text
+            .replace("search", "")
+            .strip()
+        )
+
+        if query:
+            webbrowser.open(
+                f"https://www.google.com/search?q={query}"
+            )
+
+            return (
+                f"Searching for {query}"
+            )
+
+        return "What should I search?"
+
+    # =================================
+    # DESKTOP APPS
+    # =================================
+
+    elif "chrome" in text:
 
         chrome_path = (
             r"C:\Program Files\Google"
@@ -86,10 +136,6 @@ def execute_command(text):
         subprocess.Popen("powershell")
         return "Opening PowerShell"
 
-    elif "task manager" in text:
-        subprocess.Popen("taskmgr")
-        return "Opening Task Manager"
-
     elif (
         "file explorer" in text
         or "explorer" in text
@@ -97,14 +143,15 @@ def execute_command(text):
         subprocess.Popen("explorer")
         return "Opening File Explorer"
 
-    # ----------------------
-    # WEB COMMANDS
-    # ----------------------
+    elif "task manager" in text:
+        subprocess.Popen("taskmgr")
+        return "Opening Task Manager"
 
-    elif (
-        "youtube" in text
-        or "यूट्यूब" in text
-    ):
+    # =================================
+    # WEB COMMANDS
+    # =================================
+
+    elif "youtube" in text:
         webbrowser.open(
             "https://www.youtube.com"
         )
@@ -133,23 +180,5 @@ def execute_command(text):
             "https://chat.openai.com"
         )
         return "Opening ChatGPT"
-
-    # ----------------------
-    # SEARCH
-    # ----------------------
-
-    elif "search" in text:
-
-        query = (
-            text
-            .replace("search", "")
-            .strip()
-        )
-
-        if query:
-            webbrowser.open(
-                f"https://www.google.com/search?q={query}"
-            )
-            return f"Searching for {query}"
 
     return None

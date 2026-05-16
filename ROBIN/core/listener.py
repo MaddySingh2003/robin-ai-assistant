@@ -3,6 +3,7 @@ import sounddevice as sd
 import scipy.io.wavfile as wav
 import numpy as np
 import os
+import re
 
 
 # Better model for Hinglish
@@ -13,9 +14,39 @@ model = WhisperModel(
 )
 
 
+def clean_text(text):
+
+    text = text.lower().strip()
+
+    # Remove weird symbols
+    text = re.sub(
+        r"[^\w\s]",
+        "",
+        text
+    )
+
+    # Remove repeated nonsense
+    banned = [
+        "ឡ",
+        "arespace",
+        "disciplinary",
+        "indeer",
+        "chromos",
+        "mom",
+        "ipedia"
+    ]
+
+    for word in banned:
+        text = text.replace(word, "")
+
+    text = " ".join(text.split())
+
+    return text
+
+
 def listen():
 
-    duration = 4
+    duration = 7   # increased
     sample_rate = 16000
 
     print("🎙️ Listening..., Speak now")
@@ -32,8 +63,7 @@ def listen():
     volume = np.abs(audio).mean()
     print(f"🔊 Volume: {volume}")
 
-    # Lower threshold
-    if volume < 5:
+    if volume < 10:
         print("😒 no speech detected")
         return None
 
@@ -49,30 +79,37 @@ def listen():
 
     try:
 
-        # Force Hindi/English only
         segments, info = model.transcribe(
             audio_path,
-            beam_size=2,
-            best_of=2,
+
+            # Better accuracy
+            beam_size=5,
+            best_of=5,
+
             vad_filter=True,
-            language="hi",   # Hinglish works better
-            temperature=0.0,
+            temperature=0,
+
+            # Hinglish focused
+            language="hi",
 
             initial_prompt="""
-            This assistant understands only:
-            English, Hindi, Hinglish
+            This assistant understands:
+            English
+            Hindi
+            Hinglish
 
-            Example commands:
+            Example phrases:
 
-            chrome kholo
-            youtube kholo
-            open chrome
-            open youtube
             kya haal hai
             kaise ho
+            youtube kholo
+            chrome kholo
+            open chrome
+            open youtube
+            search python tutorial on youtube
             search AI tutorial
             calculator kholo
-            google kholo
+            settings kholo
             """
         )
 
@@ -81,43 +118,31 @@ def listen():
             for segment in segments
         ).strip()
 
-        text = text.lower()
+        text = clean_text(text)
 
-        # Clean weird outputs
-        bad_words = [
-            "arespace",
-            "disciplinary",
-            "indeer",
-            "chromos",
-            "mom",
-            "ipedia"
-        ]
-
-        for word in bad_words:
-            text = text.replace(
-                word,
-                ""
-            )
-
-        text = " ".join(text.split())
-
-        if not text:
+        if len(text) < 2:
             return None
 
         print(
             "🌍 Language: Hindi/Hinglish"
         )
 
-        print("📝 Heard:", text)
+        print(
+            f"📝 Heard: {text}"
+        )
 
         return text
 
     except Exception as e:
         print(
-            f"❌ Speech error: {e}"
+            f"❌ Error: {e}"
         )
         return None
 
     finally:
+
         if os.path.exists(audio_path):
-            os.remove(audio_path)
+            try:
+                os.remove(audio_path)
+            except:
+                pass
