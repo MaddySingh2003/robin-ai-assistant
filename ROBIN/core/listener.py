@@ -4,6 +4,7 @@ from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import numpy as np
 import re
+import os
 
 
 # =====================================
@@ -52,6 +53,7 @@ def get_microphone():
 
     # Use Windows default input mic
     try:
+
         default_input = sd.default.device[0]
 
         if default_input in valid_mics:
@@ -63,7 +65,7 @@ def get_microphone():
 
             return default_input
 
-    except:
+    except Exception:
         pass
 
     # fallback
@@ -102,6 +104,30 @@ def clean_text(text):
 
 
 # =====================================
+# DELETE TEMP AUDIO
+# =====================================
+
+def delete_temp_file(file_path):
+
+    try:
+
+        if file_path and os.path.exists(file_path):
+
+            os.remove(file_path)
+
+            print(
+                "🗑️ Temp audio deleted"
+            )
+
+    except Exception as e:
+
+        print(
+            "⚠️ Delete error:",
+            e
+        )
+
+
+# =====================================
 # LISTEN
 # =====================================
 
@@ -110,6 +136,8 @@ def listen():
     print(
         "🎙️ Listening..., Speak now"
     )
+
+    temp_audio_path = None
 
     try:
 
@@ -147,22 +175,34 @@ def listen():
             "⏹️ Processing speech..."
         )
 
+        # --------------------------
+        # Create temp audio file
+        # --------------------------
+
         with tempfile.NamedTemporaryFile(
             suffix=".wav",
             delete=False
         ) as temp_audio:
 
+            temp_audio_path = (
+                temp_audio.name
+            )
+
             write(
-                temp_audio.name,
+                temp_audio_path,
                 SAMPLE_RATE,
                 audio
             )
 
-            segments, info = model.transcribe(
-                temp_audio.name,
-                beam_size=3,
-                vad_filter=True
-            )
+        # --------------------------
+        # Whisper Transcription
+        # --------------------------
+
+        segments, info = model.transcribe(
+            temp_audio_path,
+            beam_size=3,
+            vad_filter=True
+        )
 
         text = " ".join(
             segment.text
@@ -193,3 +233,10 @@ def listen():
         )
 
         return None
+
+    finally:
+
+        # Always delete temp audio
+        delete_temp_file(
+            temp_audio_path
+        )

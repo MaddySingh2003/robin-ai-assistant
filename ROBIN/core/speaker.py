@@ -40,22 +40,14 @@ def detect_language(text):
 
     text_lower = text.lower()
 
-    # ----------------------
     # Hindi script detection
-    # ----------------------
-
-    hindi_script = re.search(
+    if re.search(
         r'[\u0900-\u097F]',
         text
-    )
-
-    if hindi_script:
+    ):
         return "hindi"
 
-    # ----------------------
     # Hinglish detection
-    # ----------------------
-
     hinglish_words = [
 
         "hai",
@@ -65,11 +57,9 @@ def detect_language(text):
         "kaise",
         "kyun",
         "kar",
-        "samjho",
+        "samajh",
         "samjhao",
         "batao",
-        "seekho",
-        "samajh",
         "theek",
         "acha",
         "bhai",
@@ -80,7 +70,6 @@ def detect_language(text):
         "matlab",
         "karna",
         "bolo",
-        "explain in hinglish",
         "hinglish"
     ]
 
@@ -91,6 +80,47 @@ def detect_language(text):
         return "hinglish"
 
     return "english"
+
+
+# ==========================
+# SAFE DELETE
+# ==========================
+
+def delete_audio(file_path):
+
+    for _ in range(10):
+
+        try:
+
+            if (
+                file_path
+                and os.path.exists(
+                    file_path
+                )
+            ):
+
+                os.remove(
+                    file_path
+                )
+
+                print(
+                    "🗑️ Audio deleted"
+                )
+
+            return
+
+        except PermissionError:
+
+            time.sleep(0.2)
+
+        except Exception as e:
+
+            print(
+                "Delete Error:",
+                e
+            )
+
+            return
 
 
 # ==========================
@@ -124,23 +154,17 @@ def speak(text):
     # Select voice
     # ----------------------
 
-    if language == "hindi":
+    if language in [
+        "hindi",
+        "hinglish"
+    ]:
 
+        # Hindi voice sounds better
+        # for Hinglish also
         model = HINDI_MODEL
 
         print(
             "Using Hindi voice"
-        )
-
-    elif language == "hinglish":
-
-        # Hinglish sounds better
-        # with English voice
-        model = ENGLISH_MODEL
-
-        print(
-            "Using Hinglish "
-            "(Hindi) voice"
         )
 
     else:
@@ -151,11 +175,11 @@ def speak(text):
             "Using English voice"
         )
 
-    # ----------------------
-    # Generate speech
-    # ----------------------
-
     try:
+
+        # ----------------------
+        # Generate speech
+        # ----------------------
 
         process = subprocess.Popen(
             [
@@ -189,12 +213,15 @@ def speak(text):
         ):
             time.sleep(0.05)
 
+        # IMPORTANT FIX
         pygame.mixer.music.stop()
-        time.sleep(0.3)
-        pygame.mixer.music.quit()
-        pygame.mixer.init()
 
-        time.sleep(0.1)
+        try:
+            pygame.mixer.music.unload()
+        except:
+            pass
+
+        time.sleep(0.3)
 
     except Exception as e:
 
@@ -205,27 +232,7 @@ def speak(text):
 
     finally:
 
-        # ----------------------
-        # Delete audio file
-        # ----------------------
-
-        try:
-
-            if os.path.exists(
-                output_file
-            ):
-
-                os.remove(
-                    output_file
-                )
-
-                print(
-                    "🗑️ Audio deleted"
-                )
-
-        except Exception as e:
-
-            print(
-                "Delete Error:",
-                e
-            )
+        # Always delete
+        delete_audio(
+            output_file
+        )
