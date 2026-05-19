@@ -186,7 +186,7 @@ try:
         wait_for_wake_word()
 
         # better sounding
-        speak("Ji boss?")
+        speak("yes boss?")
 
         time.sleep(0.5)
 

@@ -190,7 +190,9 @@ def speak(text):
             time.sleep(0.05)
 
         pygame.mixer.music.stop()
-        pygame.mixer.music.unload()
+        time.sleep(0.3)
+        pygame.mixer.music.quit()
+        pygame.mixer.init()
 
         time.sleep(0.1)
 

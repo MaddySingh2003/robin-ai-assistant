@@ -1,74 +1,120 @@
 from tools.command import execute_command
+import re
+
+
+def normalize_command(text):
+
+    text = text.lower().strip()
+
+    text = re.sub(
+        r"[^\w\s]",
+        "",
+        text
+    )
+
+    # --------------------
+    # Fix whisper mistakes
+    # --------------------
+
+    replacements = {
+
+        "grom": "chrome",
+        "krom": "chrome",
+        "crome": "chrome",
+        "rome": "chrome",
+        "kohl": "chrome",
+        "holon": "",
+        "hollow": "",
+        "web": "",
+    }
+
+    for wrong, correct in replacements.items():
+
+        text = text.replace(
+            wrong,
+            correct
+        )
+
+    # --------------------
+    # Auto command fixes
+    # --------------------
+
+    if "chrome" in text:
+
+        return "open chrome"
+
+    if "youtube" in text:
+
+        return "open youtube"
+
+    if "google" in text:
+
+        return "open google"
+
+    if "calculator" in text:
+
+        return "open calculator"
+
+    if "settings" in text:
+
+        return "open settings"
+
+    if "notepad" in text:
+
+        return "open notepad"
+
+    return text
 
 
 def route_request(text):
 
-    text = text.lower().strip()
+    text = normalize_command(text)
 
     print(
         f"📌 Routing text: {text}"
     )
 
-    # -------------------
-    # Force Commands
-    # -------------------
-
     command_keywords = [
 
-        # English
         "open",
         "launch",
         "start",
         "search",
         "find",
-
-        # Hindi/Hinglish
-        "kholo",
-        "खोलो",
-        "chaloo karo",
-        "chalu karo",
-        "चालू करो",
-        "ढूंढो",
-        "खोजो",
-
-        # direct app names
         "chrome",
         "youtube",
         "google",
         "calculator",
         "settings",
-        "notepad"
+        "notepad",
+        "kholo",
+        "खोलो"
     ]
 
     is_command = any(
-        keyword in text
-        for keyword in command_keywords
+        word in text
+        for word in command_keywords
     )
 
     print(
         f"⚡ Is command: {is_command}"
     )
 
-    # -------------------
-    # Execute command
-    # -------------------
-
     if is_command:
 
-        response = execute_command(text)
+        response = execute_command(
+            text
+        )
 
         print(
-            f"⚡ Command result: {response}"
+            f"⚡ Command result: "
+            f"{response}"
         )
 
         return {
             "type": "command",
             "response": response
         }
-
-    # -------------------
-    # AI Chat
-    # -------------------
 
     return {
         "type": "chat",

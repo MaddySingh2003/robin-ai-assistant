@@ -27,6 +27,7 @@ WAKE_WORDS = [
     "hey robbin",
     "rovin",
     "gobin",
+    "bnb",
 ]
 
 # Hindi phonetic versions
