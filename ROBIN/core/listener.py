@@ -14,7 +14,7 @@ import os
 print("Loading speech model...")
 
 model = WhisperModel(
-    "large-v3",
+    "distil-large-v3",
     device="cuda",
     compute_type="int8_float16"
 )
@@ -27,8 +27,8 @@ print("Speech model loaded!")
 # =====================================
 
 SAMPLE_RATE = 16000
-DURATION = 5
-SILENCE_THRESHOLD = 0.01
+DURATION = 4
+MIN_VOLUME = 10
 
 
 # =====================================
@@ -47,21 +47,27 @@ def get_microphone():
 
         if dev["max_input_channels"] > 0:
 
-            print(f"[{i}] {dev['name']}")
+            print(
+                f"[{i}] {dev['name']}"
+            )
 
-            name = dev["name"].lower()
+            name = dev[
+                "name"
+            ].lower()
 
-            # Prefer REAL laptop microphone
+            # Prefer laptop mic
             if (
-                "intel" in name
-                or "microphone array" in name
+                "microphone array"
+                in name
+                or "intel" in name
+                or "realtek"
+                in name
             ):
 
                 best_mic = i
-
                 break
 
-    # fallback to Windows default
+    # fallback
     if best_mic is None:
 
         try:
@@ -90,29 +96,65 @@ MIC_DEVICE = get_microphone()
 
 def clean_text(text):
 
-    text = text.lower().strip()
+    text = (
+        text.lower()
+        .strip()
+    )
 
-    text = text.replace(",", "")
-    text = text.replace(".", "")
+    text = re.sub(
+        r"[^\w\s\u0900-\u097F]",
+        "",
+        text
+    )
+
+    # ---------------------------------
+    # Common speech mistakes
+    # ---------------------------------
 
     replacements = {
 
-        "hingling": "hinglish",
-        "hinglis": "hinglish",
-        "hingligh": "hinglish",
-        "explate": "explain",
-        "grom": "chrome",
-        "rome": "chrome",
-        "kolo": "kholo",
-        "holo": "kholo",
-    }
+    # Python fixes
+    "pythin": "python",
+    "pythin": "python",
+    "wyton": "python",
+    "wythin": "python",
+    "pythons": "python",
+    "paython": "python",
+    "pithon": "python",
 
+    # explain fixes
+    "eexplain": "explain",
+    "xplain": "explain",
+    "explane": "explain",
+    "explan": "explain",
+
+    # Hindi/Hinglish fixes
+    "python to explain": "python ko explain",
+    "python to eexplain": "python ko explain",
+    "python explain": "python ko explain",
+    "python explained": "python ko explain",
+    "python ko eexplain": "python ko explain",
+
+    "explainkr": "explain kar",
+    "explain kro": "explain karo",
+}
     for wrong, right in replacements.items():
 
         text = text.replace(
             wrong,
             right
         )
+
+    # remove repeated spaces
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
+    print(
+        f"🧹 Cleaned: {text}"
+    )
 
     return text
 
@@ -123,21 +165,32 @@ def clean_text(text):
 
 def delete_temp_audio(path):
 
-    try:
+    if not path:
+        return
 
-        if (
-            path
-            and os.path.exists(path)
-        ):
+    for _ in range(10):
 
-            os.remove(path)
+        try:
 
-            print(
-                "🗑️ Temp audio deleted"
-            )
+            if os.path.exists(
+                path
+            ):
 
-    except:
-        pass
+                os.remove(path)
+
+                print(
+                    "🗑️ Temp audio deleted"
+                )
+
+            return
+
+        except PermissionError:
+
+            import time
+            time.sleep(0.1)
+
+        except:
+            return
 
 
 # =====================================
@@ -156,10 +209,14 @@ def listen():
 
     try:
 
+        # ---------------------------------
+        # Record Audio
+        # ---------------------------------
+
         audio = sd.rec(
             int(
-                DURATION
-                * SAMPLE_RATE
+                SAMPLE_RATE
+                * DURATION
             ),
             samplerate=SAMPLE_RATE,
             channels=1,
@@ -169,19 +226,29 @@ def listen():
 
         sd.wait()
 
-        # FIX NaN volume
-        volume = np.nanmean(
-            np.abs(audio)
-        ) * 1000
+        # ---------------------------------
+        # Fix NaN volume
+        # ---------------------------------
+
+        volume = (
+            np.nanmean(
+                np.abs(audio)
+            ) * 1000
+        )
 
         if np.isnan(volume):
             volume = 0
 
         print(
-            f"🔊 Volume: {volume}"
+            f"🔊 Volume: "
+            f"{volume}"
         )
 
-        if volume < 10:
+        # ---------------------------------
+        # Silence detect
+        # ---------------------------------
+
+        if volume < MIN_VOLUME:
 
             print(
                 "😒 no speech detected"
@@ -192,6 +259,10 @@ def listen():
         print(
             "⏹️ Processing speech..."
         )
+
+        # ---------------------------------
+        # Save temp audio
+        # ---------------------------------
 
         with tempfile.NamedTemporaryFile(
             suffix=".wav",
@@ -208,31 +279,85 @@ def listen():
                 audio
             )
 
+        # ---------------------------------
+        # Faster Whisper
+        # ---------------------------------
+
         segments, info = model.transcribe(
     temp_audio.name,
 
+    # AUTO DETECT
     language=None,
 
-    beam_size=8,
+    task="transcribe",
 
-    best_of=5,
+    beam_size=3,
+    best_of=2,
 
     temperature=0,
-
-    task="transcribe",
 
     vad_filter=True,
 
     vad_parameters=dict(
-        min_silence_duration_ms=400
+        min_silence_duration_ms=300
     ),
 
-    condition_on_previous_text=False
+    condition_on_previous_text=False,
+
+    # FASTER + BETTER FOR HINGLISH
+    multilingual=True
 )
         text = " ".join(
+
             segment.text
-            for segment in segments
+            for segment
+            in segments
         )
+        fixes = {
+
+    # python mistakes
+    "pythin": "python",
+    "pythin": "python",
+    "wyton": "python",
+    "wythin": "python",
+    "python's": "python",
+    "ayythan": "python",
+
+    # explain mistakes
+    "eexplain": "explain",
+    "explais": "explain",
+    "explate": "explain",
+    "explainkr": "explain kar",
+    "explain kro": "explain karo",
+    "corro": "karo",
+
+    # hinglish
+    "cant you": "can you",
+    "coeexplain": "ko explain",
+}
+
+        text = text.lower()
+
+        for wrong, right in fixes.items():
+         text = text.replace(
+        wrong,
+        right
+    )
+
+# remove duplicate words
+        words = text.split()
+
+        cleaned_words = []
+
+        for word in words:
+
+           if (
+        len(cleaned_words) == 0
+        or cleaned_words[-1] != word
+    ):
+             cleaned_words.append(word)
+
+        text = " ".join(cleaned_words)
 
         text = clean_text(text)
 
@@ -245,7 +370,8 @@ def listen():
         )
 
         print(
-            f"📝 Heard: {text}"
+            f"📝 Heard: "
+            f"{text}"
         )
 
         return text
@@ -257,7 +383,7 @@ def listen():
             e
         )
 
-        # auto mic recovery
+        # Auto recover mic
         print(
             "🔄 Re-detecting microphone..."
         )

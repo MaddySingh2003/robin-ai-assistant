@@ -27,10 +27,10 @@ print("Say 'exit' to quit\n")
 simple_replies = {
 
     "kya haal hai":
-        "Main theek hoon boss, aap batao?",
+        "Main theek hu boss, aap batao?",
 
     "kaise ho":
-        "Main badhiya hoon boss.",
+        "Main badhiya hu boss.",
 
     "hello":
         "Hello boss!",
@@ -44,9 +44,6 @@ simple_replies = {
     "hey robin":
         "Yes boss?",
 
-    "namaste":
-        "Namaste boss!",
-
     "thank you":
         "Welcome boss.",
 
@@ -57,7 +54,7 @@ simple_replies = {
         "Good morning boss!",
 
     "good night":
-        "Good night boss!"
+        "Good night boss!",
 }
 
 
@@ -77,6 +74,7 @@ exit_words = [
     "bye bye robin",
     "goodbye robin",
     "ok robin bye",
+    "okay robin bye",
 ]
 
 
@@ -97,72 +95,135 @@ sleep_words = [
 
 
 # =====================================
-# LANGUAGE MODE
+# CLEAN USER TEXT
+# =====================================
+
+def clean_user_text(text):
+
+    text = text.lower().strip()
+
+    fixes = {
+
+        # Python mistakes
+        "pythin": "python",
+        "pythin": "python",
+        "pythin'": "python",
+        "wyton": "python",
+        "wythin": "python",
+        "ayythan": "python",
+        "pythons": "python",
+
+        # explain mistakes
+        "explainkr": "explain kar",
+        "explain kro": "explain karo",
+        "explate": "explain",
+
+        # hinglish mistakes
+        "hingling": "hinglish",
+        "hinglis": "hinglish",
+        "hingaleish": "hinglish",
+        "hing lish": "hinglish",
+
+        # chrome mistakes
+        "grom": "chrome",
+        "rome": "chrome",
+        "holo": "kholo",
+        "kolo": "kholo",
+    }
+
+    for wrong, right in fixes.items():
+
+        text = text.replace(
+            wrong,
+            right
+        )
+
+    print(
+        f"🧹 Cleaned: {text}"
+    )
+
+    return text
+
+
+# =====================================
+# BUILD PROMPT
 # =====================================
 
 def build_prompt(text, clean_text):
 
-    # Hinglish Mode
-    if (
-        "in hinglish" in clean_text
-        or "hinglish me" in clean_text
-        or "hinglish mein" in clean_text
-        or "explain in hinglish" in clean_text
-    ):
-
-        return f"""
-Explain in SIMPLE Hinglish.
-
-STRICT RULES:
-- Hindi written ONLY in English letters
-- NEVER use Hindi script
-- NEVER use Devanagari
-- Speak naturally like Indians
-- Keep response short
-- Beginner friendly
-
-Question:
-{text}
-"""
-
-    # Hindi Mode
-    elif (
-        "in hindi" in clean_text
-        or "hindi me" in clean_text
-        or "hindi mein" in clean_text
-        or "explain in hindi" in clean_text
-    ):
-
-        return f"""
-Explain ONLY in Hindi.
-
-STRICT RULES:
-- Use ONLY Hindi language
-- Natural Hindi
-- No English
-- Short answer
-- Beginner friendly
-
-Question:
-{text}
-"""
-
+    # ---------------------
     # English Mode
-    elif (
-        "in english" in clean_text
-        or "english me" in clean_text
-        or "english mein" in clean_text
-        or "explain in english" in clean_text
+    # ---------------------
+
+    english_keywords = [
+
+        "english",
+        "in english",
+        "english me",
+        "english mein",
+        "explain in english",
+        "only english",
+    ]
+
+    if any(
+        word in clean_text
+        for word in english_keywords
     ):
 
         return f"""
 Explain in SIMPLE English.
 
 STRICT RULES:
+- English only
+- Short answer
 - Beginner friendly
-- Short explanation
-- Natural English
-- Voice assistant style
+- Natural voice assistant
+
+Question:
+{text}
+"""
+
+    # ---------------------
+    # Hinglish Mode
+    # ---------------------
+
+    hinglish_keywords = [
+
+        "hinglish",
+        "hinglish me",
+        "hinglish mein",
+        "batao",
+        "samjhao",
+        "samjha",
+        "explain karo",
+        "explain kro",
+        "kya",
+        "tum",
+        "aap",
+        "kar",
+        "karo",
+        "kr",
+        "sakta",
+        "sakti",
+        "ke bare me",
+        "python ko",
+    ]
+
+    if any(
+        word in clean_text
+        for word in hinglish_keywords
+    ):
+
+        return f"""
+Explain in SIMPLE Hinglish.
+
+STRICT RULES:
+- Hindi ONLY in English letters
+- NEVER Hindi script
+- NEVER pure English
+- Natural Indian style
+- Short answer
+- Female assistant speaking style
 
 Question:
 {text}
@@ -179,26 +240,25 @@ try:
 
     while True:
 
-        # =====================================
+        # ==============================
         # WAIT FOR WAKE WORD
-        # =====================================
+        # ==============================
 
         wait_for_wake_word()
 
-        # better sounding
-        speak("yes Boss")
+        speak("Yes boss")
 
-        time.sleep(0.5)
+        time.sleep(0.3)
 
-        # =====================================
-        # ACTIVE LISTENING MODE
-        # =====================================
+        # ==============================
+        # ACTIVE MODE
+        # ==============================
 
         while True:
 
             text = None
 
-            # Retry 3 times
+            # retry 3 times
             for _ in range(3):
 
                 text = listen()
@@ -226,28 +286,13 @@ try:
                 text
             )
 
-            clean_text = (
-                text.lower().strip()
+            clean_text = clean_user_text(
+                text
             )
-            python_mistakes = {
 
-    "wyton": "python",
-    "wythin": "python",
-    "pythin": "python",
-    "ayythan": "python",
-    "pythons": "python",
-}
-
-            for wrong, right in python_mistakes.items():
-
-               clean_text = clean_text.replace(
-        wrong,
-        right
-    )
-
-            # =====================================
-            # EXIT ROBIN
-            # =====================================
+            # ==============================
+            # EXIT
+            # ==============================
 
             if any(
                 word in clean_text
@@ -255,7 +300,7 @@ try:
             ):
 
                 speak(
-                    "Goodbye boss."
+                    "Goodbye boss"
                 )
 
                 print(
@@ -264,9 +309,9 @@ try:
 
                 sys.exit()
 
-            # =====================================
-            # GO TO SLEEP
-            # =====================================
+            # ==============================
+            # SLEEP
+            # ==============================
 
             if any(
                 word in clean_text
@@ -279,9 +324,9 @@ try:
 
                 break
 
-            # =====================================
+            # ==============================
             # SIMPLE CHAT
-            # =====================================
+            # ==============================
 
             if clean_text in simple_replies:
 
@@ -300,12 +345,12 @@ try:
 
                 continue
 
-            # =====================================
-            # COMMANDS
-            # =====================================
+            # ==============================
+            # COMMAND ROUTER
+            # ==============================
 
-            result = (
-                route_request(text)
+            result = route_request(
+                clean_text
             )
 
             print(result)
@@ -341,9 +386,9 @@ try:
 
                 continue
 
-            # =====================================
+            # ==============================
             # AI MODE
-            # =====================================
+            # ==============================
 
             final_prompt = build_prompt(
                 text,
@@ -360,7 +405,6 @@ try:
             )
 
             speak(response)
-
 
 except KeyboardInterrupt:
 

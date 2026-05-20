@@ -3,7 +3,7 @@ import re
 
 
 # =====================================
-# GLOBAL LANGUAGE MEMORY
+# GLOBAL MODE MEMORY
 # =====================================
 
 CURRENT_MODE = "english"
@@ -15,44 +15,45 @@ CURRENT_MODE = "english"
 
 SYSTEM_PROMPT = """
 You are ROBIN, a smart female AI assistant.
-replay as femal assitant "kar satki hu , karti hu ,etc,"
 
 STRICT RULES:
 
-1. NEVER reply in Spanish.
-2. NEVER reply in French.
-3. NEVER switch languages randomly.
-4. Reply SHORT (1-3 sentences only).
-5. Speak naturally like Siri/Jarvis.
+1. You are FEMALE.
+Speak naturally like a female assistant.
 
-LANGUAGE RULES:
+Examples:
+"kar sakti hu"
+"samjha sakti hu"
 
-ENGLISH MODE:
-- ONLY English.
-- No Hindi words.
+2. ONLY support:
+- English
+- Hinglish
 
-HINDI MODE:
-- ONLY Hindi script.
-- No English words.
+3. NEVER reply in:
+- Spanish
+- French
+- Korean
+- Random languages
 
-HINGLISH MODE:
-VERY IMPORTANT:
-- ONLY Hindi written in English letters.
-- NEVER use Hindi script.
-- NEVER use Devanagari.
-- NEVER use pure English only.
-- Speak like Indians chat.
+4. Keep replies SHORT.
+(1-2 sentences)
+
+5. Talk naturally like Siri/Jarvis.
+
+HINGLISH RULES:
+- Hindi ONLY in English letters
+- NEVER Hindi script
+- NEVER pure English
+- Natural Indian style
 
 GOOD:
 "Python ek programming language hai jo coding easy banati hai."
 
 BAD:
-"Python is a programming language"
+"Python ke liye explain karega."
 
 BAD:
-"पायथन एक प्रोग्रामिंग भाषा है"
-
-Always obey language mode strictly.
+"पायथन एक language है"
 """
 
 
@@ -70,110 +71,105 @@ conversation_history = [
 
 def detect_language_mode(text):
 
+    global CURRENT_MODE
+
     text = text.lower().strip()
 
-    # =====================================
-    # HINGLISH KEYWORDS
-    # =====================================
+    # ---------------------------------
+    # FORCE ENGLISH
+    # ---------------------------------
 
-    hinglish_keywords = [
+    english_words = [
 
-        "hinglish",
-        "hing lish",
-        "hingaleish",
-        "hingling",
+        "english",
+        "in english",
+        "only english",
+        "english me",
+        "english mein",
+    ]
+
+    if any(
+        word in text
+        for word in english_words
+    ):
+
+        return "english"
+
+    # ---------------------------------
+    # HINGLISH
+    # ---------------------------------
+
+    hinglish_words = [
+
+        "kya",
+        "tum",
+        "aap",
+        "mujhe",
+        "mera",
+        "kaise",
+        "kyun",
 
         "batao",
         "samjhao",
         "samjha",
-        "samjhao na",
-
-        "kya",
-        "kaise",
-        "kyu",
-        "kyun",
-        "haal",
-        "haan",
-        "nahi",
-        "acha",
-        "accha",
-        "theek",
-        "bhai",
-        "boss",
-        "mera",
-        "tum",
-        "aap",
-        "kar",
+        "explain",
         "karo",
-        "kro",
-        "bolo",
+        "kar",
+        "kr",
+
+        "sakta",
+        "sakti",
+        "hai",
+        "ho",
+        "hoo",
+        "nahi",
 
         "ke bare me",
-        "ke baare me",
+        "ko explain",
+        "python ko",
+        "python ke bare me",
+        "corro",
+        "kro"
     ]
 
-    # =====================================
-    # ENGLISH MODE COMMANDS
-    # =====================================
-
-    english_keywords = [
-
-        "english me",
-        "english mein",
-        "in english",
-        "only english",
-        "speak english",
-    ]
-
-    if any(word in text for word in english_keywords):
-
-        return "english"
-
-    # =====================================
-    # HINDI MODE COMMANDS
-    # =====================================
-
-    hindi_keywords = [
-
-        "hindi me",
-        "hindi mein",
-        "in hindi",
-        "only hindi",
-    ]
-
-    if any(word in text for word in hindi_keywords):
-
-        return "hindi"
-
-    # =====================================
-    # AUTO HINGLISH DETECT
-    # =====================================
-
-    hinglish_score = sum(
+    score = sum(
         word in text
-        for word in hinglish_keywords
+        for word in hinglish_words
     )
 
-    if hinglish_score >= 1:
-        return "hinglish"
+    if re.search(r'[\u0900-\u097F]', text):
+       return "hinglish"
 
-    # =====================================
-    # PURE HINDI SCRIPT
-    # =====================================
+    if (
+    "python ko" in text
+    or "explain karo" in text
+    or "ko explain" in text
+):
+      return "hinglish"
 
-    hindi_script = re.search(
-        r'[\u0900-\u097F]',
+    if score >= 1:
+       return "hinglish"
+    # ---------------------------------
+    # KEEP LAST MODE
+    # ---------------------------------
+
+    return CURRENT_MODE
+
+
+# =====================================
+# CLEAN RESPONSE
+# =====================================
+
+def clean_response(text):
+
+    text = re.sub(
+        r'[\"“”]',
+        "",
         text
     )
 
-    if hindi_script:
-        return "hindi"
+    return text.strip()
 
-    # =====================================
-    # DEFAULT
-    # =====================================
-
-    return None
 
 # =====================================
 # ASK AI
@@ -183,30 +179,17 @@ def ask_api(prompt):
 
     global CURRENT_MODE
 
-    detected_mode = (
+    CURRENT_MODE = (
         detect_language_mode(prompt)
     )
 
-    # Save mode permanently
-
-    if detected_mode is not None:
-
-        CURRENT_MODE = (
-            detected_mode
-        )
-
-        print(
-            f"🌍 Mode switched → "
-            f"{CURRENT_MODE}"
-        )
-
     print(
-        f"🌍 AI Mode: "
+        f"🌍 Mode switched → "
         f"{CURRENT_MODE}"
     )
 
     # =====================================
-    # FORCE LANGUAGE
+    # LANGUAGE INSTRUCTION
     # =====================================
 
     if CURRENT_MODE == "hinglish":
@@ -215,25 +198,20 @@ def ask_api(prompt):
 Reply ONLY in Hinglish.
 
 STRICT RULES:
-- Use English letters only
-- NO Hindi script
-- NO Spanish
-- Natural Hinglish
+- Hindi ONLY in English letters
+- NEVER Hindi script
+- NEVER pure English
 - Short answer
+- Female speaking style
 
-Example:
+GOOD:
 "Python ek programming language hai jo coding easy banati hai."
-"""
 
-    elif CURRENT_MODE == "hindi":
+GOOD:
+"AI computer ko smart banane me help karti hai."
 
-        language_instruction = """
-Reply ONLY in Hindi.
-
-STRICT RULES:
-- Only Hindi script
-- No English
-- Short answer
+BAD:
+"Python ke liye explain karega."
 """
 
     else:
@@ -242,20 +220,20 @@ STRICT RULES:
 Reply ONLY in English.
 
 STRICT RULES:
-- No Hindi
-- No Spanish
+- English ONLY
 - Beginner friendly
 - Short answer
+- No Hindi
 """
 
     # =====================================
-    # USER MESSAGE
+    # MESSAGE
     # =====================================
 
     user_message = f"""
 {language_instruction}
 
-User Question:
+User:
 {prompt}
 """
 
@@ -266,77 +244,80 @@ User Question:
         }
     )
 
-    # =====================================
-    # OLLAMA
-    # =====================================
+    try:
 
-    response = ollama.chat(
-        model="qwen2.5:3b",
-        messages=conversation_history,
-        options={
-            "temperature": 0.2,
-            "num_predict": 80,
-            "top_p": 0.8
-        }
-    )
+        response = ollama.chat(
+            model="qwen2.5:3b",
 
-    ai_reply = (
-        response["message"]["content"]
-        .strip()
-    )
+            messages=conversation_history,
 
-    # Clean weird symbols
-    ai_reply = re.sub(
-        r"[\"“”]",
-        "",
-        ai_reply
-    )
+            options={
+                "temperature": 0.15,
+                "num_predict": 60,
+                "top_p": 0.8
+            }
+        )
 
-    # =====================================
-    # FORCE FIXES
-    # =====================================
+        ai_reply = (
+            response["message"]["content"]
+            .strip()
+        )
 
-    # Hinglish accidentally in Hindi
-    if CURRENT_MODE == "hinglish":
-
-        hindi_chars = re.search(
-            r'[\u0900-\u097F]',
+        ai_reply = clean_response(
             ai_reply
         )
 
-        if hindi_chars:
+        # block weird languages
+        blocked_words = [
 
-            ai_reply = (
-                "Sorry boss, "
-                "dobara pucho."
-            )
-
-    # English accidentally Spanish
-    spanish_words = [
-        "hola",
-        "gracias",
-        "quieres",
-        "lenguaje",
-        "programación"
-    ]
-
-    if CURRENT_MODE == "english":
+            "hola",
+            "bonjour",
+            "merci",
+            "gracias",
+            "안녕"
+        ]
 
         if any(
             word in ai_reply.lower()
-            for word in spanish_words
+            for word in blocked_words
         ):
 
             ai_reply = (
-                "Sorry boss, "
-                "please ask again."
+                "Dobara pucho boss."
+                if CURRENT_MODE
+                == "hinglish"
+                else
+                "Please ask again."
             )
 
-    conversation_history.append(
-        {
-            "role": "assistant",
-            "content": ai_reply
-        }
-    )
+        # Hinglish safety
+        if CURRENT_MODE == "hinglish":
 
-    return ai_reply
+            if re.search(
+                r'[\u0900-\u097F]',
+                ai_reply
+            ):
+
+                ai_reply = (
+                    "Dobara pucho boss."
+                )
+
+        conversation_history.append(
+            {
+                "role": "assistant",
+                "content": ai_reply
+            }
+        )
+
+        return ai_reply
+
+    except Exception as e:
+
+        print(
+            "❌ Brain Error:",
+            e
+        )
+
+        return (
+            "Sorry boss, try again."
+        )

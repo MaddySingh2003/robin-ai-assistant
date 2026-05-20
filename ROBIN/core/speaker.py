@@ -6,9 +6,9 @@ import pygame
 import re
 
 
-# ==========================
+# ==========================================
 # PIPER CONFIG
-# ==========================
+# ==========================================
 
 PIPER_PATH = (
     r"D:\AI-Assistant\piper\piper.exe"
@@ -25,72 +25,91 @@ HINDI_MODEL = (
 )
 
 
-# ==========================
+# ==========================================
 # INIT PYGAME
-# ==========================
+# ==========================================
 
-pygame.mixer.init()
+pygame.mixer.init(
+    frequency=22050,
+    size=-16,
+    channels=2,
+    buffer=512
+)
 
 
-# ==========================
-# LANGUAGE DETECTION
-# ==========================
+# ==========================================
+# DETECT LANGUAGE
+# ==========================================
 
 def detect_language(text):
 
-    text_lower = text.lower().strip()
+    text = text.lower().strip()
 
-    # Hindi script detection
-    if re.search(r'[\u0900-\u097F]', text):
+    # ---------------------------------
+    # Hindi script = Hindi
+    # ---------------------------------
+
+    if re.search(
+        r'[\u0900-\u097F]',
+        text
+    ):
         return "hindi"
 
-    # Strong Hinglish detection
+    # ---------------------------------
+    # Hinglish detection
+    # ---------------------------------
+
     hinglish_words = [
 
-        "samjhao",
-        "samjho",
-        "kaise",
         "kya",
+        "kaise",
         "kyun",
-        "nahi",
-        "haan",
-        "mera",
         "tum",
         "aap",
-        "karna",
+        "mujhe",
+        "samjhao",
         "batao",
-        "hinglish",
-        "hindi me",
-        "hindi mein",
-        "in hinglish"
+        "sakta",
+        "sakti",
+        "kar",
+        "karo",
+        "kr",
+        "hai",
+        "nahi",
+        "ke bare me",
+        "madad karti hai",
+        "use hota hai",
+        "coding easy banati hai",
+        "python ek"
     ]
 
-    # only if multiple hinglish words exist
-    matches = sum(
-        word in text_lower
+    score = sum(
+        word in text
         for word in hinglish_words
     )
 
-    if matches >= 2:
+    # Require stronger match
+    if score >= 2:
         return "hinglish"
 
     return "english"
 
-# ==========================
-# SAFE DELETE
-# ==========================
+# ==========================================
+# SAFE DELETE AUDIO
+# ==========================================
 
 def delete_audio(file_path):
 
-    for _ in range(10):
+    if not file_path:
+        return
+
+    # Windows file lock fix
+    for _ in range(15):
 
         try:
 
-            if (
+            if os.path.exists(
                 file_path
-                and os.path.exists(
-                    file_path
-                )
             ):
 
                 os.remove(
@@ -117,44 +136,50 @@ def delete_audio(file_path):
             return
 
 
-# ==========================
+# ==========================================
 # SPEAK
-# ==========================
+# ==========================================
 
 def speak(text):
 
     if not text:
         return
 
-    print("ROBIN:", text)
+    text = str(text).strip()
+
+    print(
+        "ROBIN:",
+        text
+    )
 
     output_file = (
         f"voice_"
-        f"{uuid.uuid4().hex[:8]}.wav"
+        f"{uuid.uuid4().hex[:8]}"
+        f".wav"
     )
 
-    # ----------------------
+    # --------------------------------------
     # Detect language
-    # ----------------------
+    # --------------------------------------
 
-    language = detect_language(text)
+    language = detect_language(
+        text
+    )
 
     print(
         f"Detected language: "
         f"{language}"
     )
 
-    # ----------------------
-    # Select voice
-    # ----------------------
+    # --------------------------------------
+    # Select voice model
+    # --------------------------------------
 
     if language in [
         "hindi",
         "hinglish"
     ]:
 
-        # Hindi voice sounds better
-        # for Hinglish also
         model = HINDI_MODEL
 
         print(
@@ -171,9 +196,9 @@ def speak(text):
 
     try:
 
-        # ----------------------
+        # --------------------------------------
         # Generate speech
-        # ----------------------
+        # --------------------------------------
 
         process = subprocess.Popen(
             [
@@ -190,11 +215,13 @@ def speak(text):
             encoding="utf-8"
         )
 
-        process.communicate(text)
+        process.communicate(
+            text
+        )
 
-        # ----------------------
+        # --------------------------------------
         # Play audio
-        # ----------------------
+        # --------------------------------------
 
         pygame.mixer.music.load(
             output_file
@@ -202,15 +229,18 @@ def speak(text):
 
         pygame.mixer.music.play()
 
-        while (
-            pygame.mixer.music.get_busy()
-        ):
+        while pygame.mixer.music.get_busy():
+
             time.sleep(0.05)
 
-        # IMPORTANT FIX
+        # --------------------------------------
+        # Proper cleanup
+        # --------------------------------------
+
         pygame.mixer.music.stop()
 
         try:
+
             pygame.mixer.music.unload()
         except:
             pass
@@ -226,7 +256,6 @@ def speak(text):
 
     finally:
 
-        # Always delete
         delete_audio(
             output_file
         )
