@@ -38,49 +38,43 @@ pygame.mixer.init()
 
 def detect_language(text):
 
-    text_lower = text.lower()
+    text_lower = text.lower().strip()
 
     # Hindi script detection
-    if re.search(
-        r'[\u0900-\u097F]',
-        text
-    ):
+    if re.search(r'[\u0900-\u097F]', text):
         return "hindi"
 
-    # Hinglish detection
+    # Strong Hinglish detection
     hinglish_words = [
 
-        "hai",
-        "haan",
-        "nahi",
-        "kya",
-        "kaise",
-        "kyun",
-        "kar",
-        "samajh",
         "samjhao",
-        "batao",
-        "theek",
-        "acha",
-        "bhai",
-        "boss",
+        "samjho",
+        "kaise",
+        "kya",
+        "kyun",
+        "nahi",
+        "haan",
         "mera",
         "tum",
         "aap",
-        "matlab",
         "karna",
-        "bolo",
-        "hinglish"
+        "batao",
+        "hinglish",
+        "hindi me",
+        "hindi mein",
+        "in hinglish"
     ]
 
-    if any(
+    # only if multiple hinglish words exist
+    matches = sum(
         word in text_lower
         for word in hinglish_words
-    ):
+    )
+
+    if matches >= 2:
         return "hinglish"
 
     return "english"
-
 
 # ==========================
 # SAFE DELETE

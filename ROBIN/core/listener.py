@@ -14,9 +14,9 @@ import os
 print("Loading speech model...")
 
 model = WhisperModel(
-    "distil-large-v3",
-    device="cuda",   # safer first
-    compute_type="int8"
+    "large-v3",
+    device="cuda",
+    compute_type="int8_float16"
 )
 
 print("Speech model loaded!")
@@ -41,7 +41,7 @@ def get_microphone():
 
     devices = sd.query_devices()
 
-    valid_mics = []
+    best_mic = None
 
     for i, dev in enumerate(devices):
 
@@ -49,32 +49,36 @@ def get_microphone():
 
             print(f"[{i}] {dev['name']}")
 
-            valid_mics.append(i)
+            name = dev["name"].lower()
 
-    # Use Windows default input mic
-    try:
+            # Prefer REAL laptop microphone
+            if (
+                "intel" in name
+                or "microphone array" in name
+            ):
 
-        default_input = sd.default.device[0]
+                best_mic = i
 
-        if default_input in valid_mics:
+                break
 
-            print(
-                f"\n✅ Using default mic: "
-                f"{default_input}"
+    # fallback to Windows default
+    if best_mic is None:
+
+        try:
+
+            best_mic = (
+                sd.default.device[0]
             )
 
-            return default_input
+        except:
+            best_mic = None
 
-    except Exception:
-        pass
-
-    # fallback
     print(
-        f"\n✅ Fallback mic: "
-        f"{valid_mics[0]}"
+        f"\n✅ Using mic: "
+        f"{best_mic}"
     )
 
-    return valid_mics[0]
+    return best_mic
 
 
 MIC_DEVICE = get_microphone()
@@ -88,43 +92,52 @@ def clean_text(text):
 
     text = text.lower().strip()
 
-    garbage_patterns = [
+    text = text.replace(",", "")
+    text = text.replace(".", "")
 
-        r"(hoot){4,}",
-        r"(itut){3,}",
-        r"(.)\1{15,}",
-    ]
+    replacements = {
 
-    for pattern in garbage_patterns:
+        "hingling": "hinglish",
+        "hinglis": "hinglish",
+        "hingligh": "hinglish",
+        "explate": "explain",
+        "grom": "chrome",
+        "rome": "chrome",
+        "kolo": "kholo",
+        "holo": "kholo",
+    }
 
-        if re.search(pattern, text):
-            return ""
+    for wrong, right in replacements.items():
+
+        text = text.replace(
+            wrong,
+            right
+        )
 
     return text
 
 
 # =====================================
-# DELETE TEMP AUDIO
+# DELETE AUDIO
 # =====================================
 
-def delete_temp_file(file_path):
+def delete_temp_audio(path):
 
     try:
 
-        if file_path and os.path.exists(file_path):
+        if (
+            path
+            and os.path.exists(path)
+        ):
 
-            os.remove(file_path)
+            os.remove(path)
 
             print(
                 "🗑️ Temp audio deleted"
             )
 
-    except Exception as e:
-
-        print(
-            "⚠️ Delete error:",
-            e
-        )
+    except:
+        pass
 
 
 # =====================================
@@ -132,6 +145,8 @@ def delete_temp_file(file_path):
 # =====================================
 
 def listen():
+
+    global MIC_DEVICE
 
     print(
         "🎙️ Listening..., Speak now"
@@ -154,10 +169,13 @@ def listen():
 
         sd.wait()
 
-        volume = (
-            np.abs(audio).mean()
-            * 1000
-        )
+        # FIX NaN volume
+        volume = np.nanmean(
+            np.abs(audio)
+        ) * 1000
+
+        if np.isnan(volume):
+            volume = 0
 
         print(
             f"🔊 Volume: {volume}"
@@ -175,10 +193,6 @@ def listen():
             "⏹️ Processing speech..."
         )
 
-        # --------------------------
-        # Create temp audio file
-        # --------------------------
-
         with tempfile.NamedTemporaryFile(
             suffix=".wav",
             delete=False
@@ -194,16 +208,27 @@ def listen():
                 audio
             )
 
-        # --------------------------
-        # Whisper Transcription
-        # --------------------------
-
         segments, info = model.transcribe(
-            temp_audio_path,
-            beam_size=3,
-            vad_filter=True
-        )
+    temp_audio.name,
 
+    language=None,
+
+    beam_size=8,
+
+    best_of=5,
+
+    temperature=0,
+
+    task="transcribe",
+
+    vad_filter=True,
+
+    vad_parameters=dict(
+        min_silence_duration_ms=400
+    ),
+
+    condition_on_previous_text=False
+)
         text = " ".join(
             segment.text
             for segment in segments
@@ -232,11 +257,19 @@ def listen():
             e
         )
 
+        # auto mic recovery
+        print(
+            "🔄 Re-detecting microphone..."
+        )
+
+        MIC_DEVICE = (
+            get_microphone()
+        )
+
         return None
 
     finally:
 
-        # Always delete temp audio
-        delete_temp_file(
+        delete_temp_audio(
             temp_audio_path
         )

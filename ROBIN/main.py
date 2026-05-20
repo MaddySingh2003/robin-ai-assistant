@@ -186,7 +186,7 @@ try:
         wait_for_wake_word()
 
         # better sounding
-        speak("yes boss?")
+        speak("yes Boss")
 
         time.sleep(0.5)
 
@@ -229,6 +229,21 @@ try:
             clean_text = (
                 text.lower().strip()
             )
+            python_mistakes = {
+
+    "wyton": "python",
+    "wythin": "python",
+    "pythin": "python",
+    "ayythan": "python",
+    "pythons": "python",
+}
+
+            for wrong, right in python_mistakes.items():
+
+               clean_text = clean_text.replace(
+        wrong,
+        right
+    )
 
             # =====================================
             # EXIT ROBIN
