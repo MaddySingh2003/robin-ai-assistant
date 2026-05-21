@@ -71,95 +71,70 @@ conversation_history = [
 
 def detect_language_mode(text):
 
-    global CURRENT_MODE
-
     text = text.lower().strip()
 
-    # ---------------------------------
-    # FORCE ENGLISH
-    # ---------------------------------
+    # -------------------------
+    # ENGLISH
+    # -------------------------
 
     english_words = [
 
-        "english",
+        "what is",
+        "how are you",
+        "can you",
+        "tell me",
         "in english",
-        "only english",
-        "english me",
-        "english mein",
+        "english",
+        "who is",
+        "why",
+        "when",
+        "where",
     ]
 
-    if any(
-        word in text
-        for word in english_words
-    ):
-
+    if any(word in text for word in english_words):
         return "english"
 
-    # ---------------------------------
+    # -------------------------
     # HINGLISH
-    # ---------------------------------
+    # -------------------------
 
     hinglish_words = [
 
         "kya",
+        "kaise",
+        "kyun",
         "tum",
         "aap",
         "mujhe",
         "mera",
-        "kaise",
-        "kyun",
-
-        "batao",
-        "samjhao",
-        "samjha",
-        "explain",
+        "ko",
         "karo",
         "kar",
         "kr",
-
-        "sakta",
-        "sakti",
+        "samjhao",
+        "batao",
+        "explain karo",
+        "explain kro",
         "hai",
         "ho",
         "hoo",
         "nahi",
-
-        "ke bare me",
-        "ko explain",
-        "python ko",
-        "python ke bare me",
-        "corro",
-        "kro"
+        "sakta",
+        "sakti"
     ]
 
-    score = sum(
-        word in text
-        for word in hinglish_words
-    )
-
+    # Hindi script = Hinglish
     if re.search(r'[\u0900-\u097F]', text):
-       return "hinglish"
+        return "hinglish"
 
-    if (
-    "python ko" in text
-    or "explain karo" in text
-    or "ko explain" in text
-):
-      return "hinglish"
+    if any(word in text for word in hinglish_words):
+        return "hinglish"
 
-    if score >= 1:
-       return "hinglish"
-    # ---------------------------------
-    # KEEP LAST MODE
-    # ---------------------------------
+    # -------------------------
+    # DEFAULT
+    # -------------------------
 
-    return CURRENT_MODE
-
-
-# =====================================
-# CLEAN RESPONSE
-# =====================================
-
+    return "english"
 def clean_response(text):
 
     text = re.sub(
@@ -177,147 +152,141 @@ def clean_response(text):
 
 def ask_api(prompt):
 
-    global CURRENT_MODE
+    mode = detect_language_mode(prompt)
 
-    CURRENT_MODE = (
-        detect_language_mode(prompt)
-    )
-
-    print(
-        f"🌍 Mode switched → "
-        f"{CURRENT_MODE}"
-    )
+    print(f"🌍 Mode switched → {mode}")
 
     # =====================================
-    # LANGUAGE INSTRUCTION
+    # STRICT LANGUAGE PROMPTS
     # =====================================
 
-    if CURRENT_MODE == "hinglish":
+    if mode == "english":
 
-        language_instruction = """
-Reply ONLY in Hinglish.
+        system_prompt = """
+You are ROBIN, a smart female AI assistant.
 
 STRICT RULES:
-- Hindi ONLY in English letters
-- NEVER Hindi script
-- NEVER pure English
-- Short answer
-- Female speaking style
+- Reply ONLY in English.
+- NEVER use Hindi words.
+- NEVER use Hinglish.
+- NEVER use Hindi script.
+- Keep answers SHORT.
+- Speak naturally like Jarvis/Siri.
+- Beginner friendly.
+
+GOOD:
+"Python is a programming language used for coding."
+
+BAD:
+"Python ek programming language hai"
+"""
+
+    else:  # hinglish
+
+        system_prompt = """
+You are ROBIN, a smart female AI assistant.
+
+STRICT RULES:
+- Reply ONLY in Hinglish.
+- Hindi MUST be written in English letters.
+- NEVER use Hindi script.
+- NEVER reply in pure English.
+- Keep answers SHORT.
+- Speak naturally like Indians.
 
 GOOD:
 "Python ek programming language hai jo coding easy banati hai."
 
-GOOD:
-"AI computer ko smart banane me help karti hai."
+BAD:
+"Python is a programming language"
 
 BAD:
-"Python ke liye explain karega."
+"पायथन एक भाषा है"
 """
-
-    else:
-
-        language_instruction = """
-Reply ONLY in English.
-
-STRICT RULES:
-- English ONLY
-- Beginner friendly
-- Short answer
-- No Hindi
-"""
-
-    # =====================================
-    # MESSAGE
-    # =====================================
-
-    user_message = f"""
-{language_instruction}
-
-User:
-{prompt}
-"""
-
-    conversation_history.append(
-        {
-            "role": "user",
-            "content": user_message
-        }
-    )
 
     try:
 
         response = ollama.chat(
             model="qwen2.5:3b",
 
-            messages=conversation_history,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
 
             options={
-                "temperature": 0.15,
-                "num_predict": 60,
-                "top_p": 0.8
+                "temperature": 0.0,
+                "top_p": 0.3,
+                "num_predict": 35,
+                "repeat_penalty": 1.2
             }
         )
 
-        ai_reply = (
-            response["message"]["content"]
-            .strip()
-        )
+        ai_reply = response["message"][
+            "content"
+        ].strip()
 
-        ai_reply = clean_response(
+        ai_reply = re.sub(
+            r'[\"“”]',
+            "",
             ai_reply
         )
 
-        # block weird languages
-        blocked_words = [
+        print("🤖 Raw:", ai_reply)
 
-            "hola",
-            "bonjour",
-            "merci",
-            "gracias",
-            "안녕"
-        ]
+        # =====================================
+        # FORCE LANGUAGE FIX
+        # =====================================
 
-        if any(
-            word in ai_reply.lower()
-            for word in blocked_words
-        ):
+        if mode == "english":
 
-            ai_reply = (
-                "Dobara pucho boss."
-                if CURRENT_MODE
-                == "hinglish"
-                else
-                "Please ask again."
-            )
+            # If Hindi leaked → regenerate
+            hindi_words = [
+                "hai",
+                "kya",
+                "kaise",
+                "kar",
+                "ek",
+                "jo"
+            ]
 
-        # Hinglish safety
-        if CURRENT_MODE == "hinglish":
-
-            if re.search(
-                r'[\u0900-\u097F]',
-                ai_reply
+            if any(
+                word in ai_reply.lower()
+                for word in hindi_words
             ):
 
                 ai_reply = (
-                    "Dobara pucho boss."
+                    "Python is a programming language "
+                    "used for coding."
                 )
 
-        conversation_history.append(
-            {
-                "role": "assistant",
-                "content": ai_reply
-            }
-        )
+        else:
+
+            # Hinglish fix
+            if (
+                "python" in prompt.lower()
+            ):
+
+                ai_reply = (
+                    "Python ek programming language hai "
+                    "jo coding easy banati hai."
+                )
 
         return ai_reply
 
     except Exception as e:
 
         print(
-            "❌ Brain Error:",
+            "❌ Brain error:",
             e
         )
 
         return (
-            "Sorry boss, try again."
+            "Sorry boss."
         )

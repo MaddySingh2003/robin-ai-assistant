@@ -45,58 +45,94 @@ def detect_language(text):
 
     text = text.lower().strip()
 
-    # ---------------------------------
-    # Hindi script = Hindi
-    # ---------------------------------
+    # --------------------------
+    # Hindi script → Hinglish
+    # --------------------------
 
     if re.search(
         r'[\u0900-\u097F]',
         text
     ):
-        return "hindi"
+        return "hinglish"
 
-    # ---------------------------------
-    # Hinglish detection
-    # ---------------------------------
+    # --------------------------
+    # Hinglish words
+    # --------------------------
 
     hinglish_words = [
 
+        "hai",
+        "ho",
+        "hoo",
+        "hota",
+        "hoti",
+        "kar",
+        "karo",
+        "kr",
+        "ko",
+        "ka",
+        "ki",
+        "ke",
+        "ek",
+        "jo",
         "kya",
         "kaise",
         "kyun",
         "tum",
         "aap",
         "mujhe",
+        "mera",
         "samjhao",
         "batao",
+        "banati",
+        "easy banati",
+        "use hota",
         "sakta",
-        "sakti",
-        "kar",
-        "karo",
-        "kr",
-        "hai",
-        "nahi",
-        "ke bare me",
-        "madad karti hai",
-        "use hota hai",
-        "coding easy banati hai",
-        "python ek"
+        "sakti"
     ]
 
-    score = sum(
+    hinglish_score = sum(
         word in text
         for word in hinglish_words
     )
 
-    # Require stronger match
-    if score >= 2:
+    # --------------------------
+    # English words
+    # --------------------------
+
+    english_words = [
+
+        "what",
+        "why",
+        "where",
+        "when",
+        "how",
+        "thank you",
+        "hello",
+        "goodbye",
+        "anything else",
+        "used for",
+        "programming language",
+        "development",
+        "artificial intelligence",
+        "readability",
+        "learning"
+    ]
+
+    english_score = sum(
+        word in text
+        for word in english_words
+    )
+
+    # Hinglish wins
+    if hinglish_score >= 2:
         return "hinglish"
 
-    return "english"
+    # English
+    if english_score >= 1:
+        return "english"
 
-# ==========================================
-# SAFE DELETE AUDIO
-# ==========================================
+    return "english"
 
 def delete_audio(file_path):
 
