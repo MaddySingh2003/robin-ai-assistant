@@ -291,8 +291,8 @@ def listen():
 
     task="transcribe",
 
-    beam_size=3,
-    best_of=2,
+    beam_size=5,
+    best_of=3,
 
     temperature=0,
 
@@ -301,6 +301,7 @@ def listen():
     vad_parameters=dict(
         min_silence_duration_ms=300
     ),
+    hallucination_silence_threshold=1,
 
     condition_on_previous_text=False,
 

@@ -75,6 +75,7 @@ exit_words = [
     "goodbye robin",
     "ok robin bye",
     "okay robin bye",
+    "ok bye"
 ]
 
 
