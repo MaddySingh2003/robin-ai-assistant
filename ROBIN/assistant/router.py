@@ -1,5 +1,5 @@
-from tools.command import execute_command
 import re
+from tools.command import execute_command
 
 
 def normalize_command(text):
@@ -12,56 +12,81 @@ def normalize_command(text):
         text
     )
 
-    # --------------------
-    # Fix whisper mistakes
-    # --------------------
+    # ==========================
+    # Whisper fixes
+    # ==========================
 
     replacements = {
 
         "grom": "chrome",
         "krom": "chrome",
         "crome": "chrome",
-        "rome": "chrome",
-        "kohl": "chrome",
-        "holon": "",
-        "hollow": "",
-        "web": "",
+
+        "you tube": "youtube",
+        "u tube": "youtube",
+
+        "v s code": "vs code",
+        "vs-code": "vs code",
+
+        "khol": "open",
+        "kholo": "open",
+
+        "start karo": "open",
+        "chalu karo": "open",
     }
 
-    for wrong, correct in replacements.items():
+    for wrong, right in replacements.items():
 
         text = text.replace(
             wrong,
-            correct
+            right
         )
 
-    # --------------------
-    # Auto command fixes
-    # --------------------
+    # ==========================
+    # KEEP SEARCH TEXT SAFE
+    # ==========================
 
-    if "chrome" in text:
+    search_patterns = [
 
-        return "open chrome"
+        "search",
+        "play",
+        "find",
+        "look up",
+        "in youtube",
+        "on youtube",
+    ]
 
-    if "youtube" in text:
+    if any(
+        x in text
+        for x in search_patterns
+    ):
+        return text
 
-        return "open youtube"
+    # ==========================
+    # ONLY EXACT SHORTCUTS
+    # ==========================
 
-    if "google" in text:
+    shortcuts = {
 
-        return "open google"
+        "chrome": "open chrome",
+        "youtube": "open youtube",
+        "google": "open google",
+        "calculator": "open calculator",
+        "settings": "open settings",
+        "notepad": "open notepad",
+        "cmd": "open cmd",
+        "terminal": "open terminal",
+        "powershell": "open powershell",
+        "task manager": "open task manager",
+        "explorer": "open explorer",
+        "vs code": "open vscode",
+        "vscode": "open vscode",
+    }
 
-    if "calculator" in text:
-
-        return "open calculator"
-
-    if "settings" in text:
-
-        return "open settings"
-
-    if "notepad" in text:
-
-        return "open notepad"
+    # IMPORTANT:
+    # ONLY exact match
+    if text in shortcuts:
+        return shortcuts[text]
 
     return text
 
@@ -79,21 +104,33 @@ def route_request(text):
         "open",
         "launch",
         "start",
+
         "search",
+        "play",
         "find",
-        "chrome",
+
         "youtube",
         "google",
+        "chrome",
+        "vscode",
         "calculator",
         "settings",
         "notepad",
-        "kholo",
-        "खोलो"
+        "cmd",
+        "terminal",
+        "powershell",
+        "task manager",
+        "explorer",
+
+        "shutdown",
+        "restart",
+        "mute",
+        "volume",
     ]
 
     is_command = any(
-        word in text
-        for word in command_keywords
+        keyword in text
+        for keyword in command_keywords
     )
 
     print(
@@ -107,8 +144,7 @@ def route_request(text):
         )
 
         print(
-            f"⚡ Command result: "
-            f"{response}"
+            f"⚡ Command result: {response}"
         )
 
         return {

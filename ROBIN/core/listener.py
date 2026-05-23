@@ -10,14 +10,13 @@ import torch
 import time
 
 
-# =====================================
-# MODELS
-# =====================================
-
 print("Loading speech models...")
 
 
+# ======================================
 # FAST MODEL
+# ======================================
+
 fast_model = WhisperModel(
     "distil-large-v3",
     device="cuda",
@@ -25,7 +24,10 @@ fast_model = WhisperModel(
 )
 
 
-# HINGLISH FALLBACK MODEL
+# ======================================
+# HINGLISH MODEL
+# ======================================
+
 hinglish_model = pipeline(
     "automatic-speech-recognition",
     model="Oriserve/Whisper-Hindi2Hinglish-Prime",
@@ -35,24 +37,25 @@ hinglish_model = pipeline(
 print("Speech models loaded!")
 
 
-# =====================================
+# ======================================
 # SETTINGS
-# =====================================
+# ======================================
 
 SAMPLE_RATE = 16000
 DURATION = 4
 MIN_VOLUME = 10
 
 
-# =====================================
-# AUTO MIC DETECT
-# =====================================
+# ======================================
+# MICROPHONE
+# ======================================
 
 def get_microphone():
 
     print("\n🎤 Available microphones:\n")
 
     devices = sd.query_devices()
+
     best_mic = None
 
     for i, dev in enumerate(devices):
@@ -72,11 +75,7 @@ def get_microphone():
                 break
 
     if best_mic is None:
-
-        try:
-            best_mic = sd.default.device[0]
-        except:
-            best_mic = None
+        best_mic = sd.default.device[0]
 
     print(f"\n✅ Using mic: {best_mic}")
 
@@ -86,86 +85,62 @@ def get_microphone():
 MIC_DEVICE = get_microphone()
 
 
-# =====================================
-# BAD TRANSCRIPT DETECTOR
-# =====================================
+# ======================================
+# HINGLISH RETRY CHECK
+# ======================================
 
-def should_retry_hinglish(text, detected_lang):
+def should_retry_hinglish(text):
 
     text = text.lower().strip()
-    words = text.split()
 
-    # obvious gibberish patterns
-    gibberish_patterns = [
+    # ONLY suspicious phrases
+    suspicious = [
 
-        "whattham",
-        "whython",
-        "wythin",
-        "athen",
-        "brumco",
-        "fulllow",
+        "python to explain",
+        "go explain",
         "coeexplain",
         "eexplain",
-        "wyton",
-        "brocol",
-        "burton yeah"
+        "a lone mask",
+        "alone must",
+        "lone mask",
+        "who is alone",
+        "athen",
+        "fulllow",
     ]
 
     if any(
         x in text
-        for x in gibberish_patterns
+        for x in suspicious
     ):
         return True
 
-    # Hindi wrongly detected
-    if detected_lang == "hi":
-        return True
+    # partial hinglish
+    hinglish_words = {
 
-    # weird repeated words
-    if len(words) >= 2:
+        "kya",
+        "kaise",
+        "kyun",
+        "hai",
+        "ko",
+        "kar",
+        "karo",
+        "samjhao",
+        "batao",
+        "matlab"
+    }
 
-        repeated_ratio = (
-            len(words)
-            - len(set(words))
-        ) / max(len(words), 1)
-
-        if repeated_ratio > 0.45:
-            return True
-
-    # suspicious word quality
-    weird_words = 0
-
-    for word in words:
-
-        # random broken word
-        if (
-            len(word) > 7
-            and not re.match(
-                r"^[a-zA-Z]+$",
-                word
-            )
-        ):
-            weird_words += 1
-
-    if weird_words >= 1:
-        return True
-
-    # suspicious very short nonsense
-    if (
-        len(words) <= 3
-        and any(
-            len(w) > 10
-            for w in words
-        )
+    if any(
+        word in text
+        for word in hinglish_words
     ):
         return True
 
     return False
 
 
-# =====================================
+# ======================================
 # TEXT CLEANER
-# =====================================
+# ======================================
 
 def clean_text(text):
 
@@ -179,28 +154,47 @@ def clean_text(text):
 
     fixes = {
 
-        # common whisper mistakes
-        "cant you": "can you",
-        "dont you": "don't you",
+        "eexplain":
+        "explain",
 
-        # explain
-        "eexplain": "explain",
-        "xplain": "explain",
-        "explais": "explain",
-        "explane": "explain",
+        "explais":
+        "explain",
 
-        # broken hinglish
-        "coeexplain": "ko explain",
-        "corro": "karo",
-        "kro": "karo",
+        "explane":
+        "explain",
 
-        # coding words
-        "vs code": "vscode",
-        "visual studio": "vscode",
+        "python to explain":
+        "python ko explain",
 
-        # speech mistakes
-        "okay bye": "bye",
-        "bye okay": "bye",
+        "python go explain":
+        "python ko explain",
+
+        "pythonoeexplain":
+        "python ko explain",
+
+        "coeexplain":
+        "ko explain",
+
+        "kro":
+        "karo",
+
+        "a lone mask":
+        "elon musk",
+
+        "alone must":
+        "elon musk",
+
+        "lone mask":
+        "elon musk",
+
+        "vs code":
+        "vscode",
+
+        "visual studio":
+        "vscode",
+
+        "okay bye":
+        "bye"
     }
 
     for wrong, right in fixes.items():
@@ -209,8 +203,6 @@ def clean_text(text):
             wrong,
             right
         )
-
-    # remove repeated words
 
     words = text.split()
 
@@ -226,20 +218,14 @@ def clean_text(text):
 
     text = " ".join(cleaned)
 
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
-    )
-
     print(f"🧹 Cleaned: {text}")
 
     return text
 
 
-# =====================================
+# ======================================
 # DELETE TEMP AUDIO
-# =====================================
+# ======================================
 
 def delete_temp_audio(path):
 
@@ -264,13 +250,10 @@ def delete_temp_audio(path):
 
             time.sleep(0.1)
 
-        except:
-            return
 
-
-# =====================================
+# ======================================
 # LISTEN
-# =====================================
+# ======================================
 
 def listen():
 
@@ -284,12 +267,8 @@ def listen():
 
     try:
 
-        # RECORD AUDIO
         audio = sd.rec(
-            int(
-                SAMPLE_RATE
-                * DURATION
-            ),
+            int(SAMPLE_RATE * DURATION),
             samplerate=SAMPLE_RATE,
             channels=1,
             dtype="float32",
@@ -304,12 +283,7 @@ def listen():
             ) * 1000
         )
 
-        if np.isnan(volume):
-            volume = 0
-
-        print(
-            f"🔊 Volume: {volume}"
-        )
+        print(f"🔊 Volume: {volume}")
 
         if volume < MIN_VOLUME:
 
@@ -323,15 +297,12 @@ def listen():
             "⏹️ Processing speech..."
         )
 
-        # SAVE AUDIO
         with tempfile.NamedTemporaryFile(
             suffix=".wav",
             delete=False
         ) as temp_audio:
 
-            temp_audio_path = (
-                temp_audio.name
-            )
+            temp_audio_path = temp_audio.name
 
             write(
                 temp_audio_path,
@@ -339,22 +310,17 @@ def listen():
                 audio
             )
 
-        # =================================
+        # ------------------------
         # FAST MODEL
-        # =================================
+        # ------------------------
 
         segments, info = (
             fast_model.transcribe(
                 temp_audio_path,
+                beam_size=5,
+                vad_filter=True,
                 language=None,
                 task="transcribe",
-                beam_size=5,
-                best_of=3,
-                temperature=0,
-                vad_filter=True,
-                vad_parameters=dict(
-                    min_silence_duration_ms=300
-                ),
                 condition_on_previous_text=False
             )
         )
@@ -362,7 +328,7 @@ def listen():
         fast_text = " ".join(
             segment.text
             for segment in segments
-        ).lower()
+        ).lower().strip()
 
         print(
             f"🌍 Language: {info.language}"
@@ -374,13 +340,12 @@ def listen():
 
         text = fast_text
 
-        # =================================
-        # SMART RETRY
-        # =================================
+        # ------------------------
+        # RETRY ONLY IF NEEDED
+        # ------------------------
 
         if should_retry_hinglish(
-            fast_text,
-            info.language
+            fast_text
         ):
 
             print(
@@ -399,20 +364,16 @@ def listen():
                     .strip()
                 )
 
-                if better_text:
+                print(
+                    f"🔥 Hinglish Model: {better_text}"
+                )
 
-                    print(
-                        f"🔥 Hinglish Model: {better_text}"
-                    )
-
-                    # Use better result only
-                    if len(
-                        better_text.split()
-                    ) >= len(
-                        fast_text.split()
-                    ):
-
-                        text = better_text
+                if (
+                    "kya" in better_text
+                    or "ko" in better_text
+                    or "hai" in better_text
+                ):
+                    text = better_text
 
             except Exception as e:
 
@@ -439,13 +400,7 @@ def listen():
             e
         )
 
-        print(
-            "🔄 Re-detecting microphone..."
-        )
-
-        MIC_DEVICE = (
-            get_microphone()
-        )
+        MIC_DEVICE = get_microphone()
 
         return None
 

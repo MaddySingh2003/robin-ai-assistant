@@ -4,89 +4,233 @@ import subprocess
 import re
 
 
-def execute_command(text):
+# ======================================
+# APP PATHS
+# ======================================
+
+APP_PATHS = {
+
+    "chrome": "start chrome",
+
+    "vscode": "code",
+
+    "notepad": "notepad",
+
+    "calculator": "calc",
+
+    "cmd": "cmd",
+
+    "terminal": "wt",
+
+    "powershell": "powershell",
+
+    "task manager": "taskmgr",
+
+    "explorer": "explorer",
+
+    "spotify": os.path.expandvars(
+        r"%APPDATA%\Spotify\Spotify.exe"
+    ),
+
+    "discord": os.path.expandvars(
+        r"%LOCALAPPDATA%\Discord\Update.exe --processStart Discord.exe"
+    ),
+
+    "telegram": os.path.expandvars(
+        r"%APPDATA%\Telegram Desktop\Telegram.exe"
+    ),
+
+    "steam": os.path.expandvars(
+        r"%PROGRAMFILES(X86)%\Steam\Steam.exe"
+    ),
+
+    "whatsapp": "start whatsapp:"
+}
+
+
+# ======================================
+# NORMALIZE TEXT
+# ======================================
+
+import re
+
+
+def normalize_text(text):
 
     text = text.lower().strip()
 
-    # ==================================
-    # FIX COMMON WHISPER MISTAKES
-    # ==================================
-
-    fixes = {
-
-        "grom": "chrome",
-        "crome": "chrome",
-        "krom": "chrome",
-
-        "emd": "cmd",
-        "tmd": "cmd",
-
-        "v s code": "vs code",
-        "vs-code": "vs code",
-
-        "you tube": "youtube",
-
-        "khol": "open",
-        "kholo": "open",
-        "start karo": "open",
-        "chalu karo": "open",
-    }
-
-    for wrong, right in fixes.items():
-
-        text = re.sub(
-            rf"\b{wrong}\b",
-            right,
-            text
-        )
+    text = re.sub(
+        r"[^\w\s]",
+        "",
+        text
+    )
 
     # ==================================
-    # HINDI / HINGLISH NORMALIZATION
+    # WHISPER FIXES
     # ==================================
 
     replacements = {
 
-        "क्रोम": "chrome",
-        "यूट्यूब": "youtube",
-        "गूगल": "google",
-        "सेटिंग्स": "settings",
-        "कैलकुलेटर": "calculator",
-        "नोटपैड": "notepad",
-        "कमांड": "cmd",
+        "grom": "chrome",
+        "krom": "chrome",
+        "crome": "chrome",
 
-        "chrome open": "open chrome",
-        "youtube open": "open youtube",
-        "google open": "open google",
-        "calculator open": "open calculator",
-        "notepad open": "open notepad",
-        "cmd open": "open cmd",
-        "terminal open": "open terminal",
+        "you tube": "youtube",
+        "u tube": "youtube",
 
-        "chrome kholo": "open chrome",
-        "youtube kholo": "open youtube",
-        "google kholo": "open google",
-        "calculator kholo": "open calculator",
-        "settings kholo": "open settings",
-        "cmd kholo": "open cmd",
-        "terminal kholo": "open terminal",
-        "vs code kholo": "open vs code",
-        "vscode kholo": "open vs code",
+        "v s code": "vs code",
+        "vs-code": "vs code",
 
-        "command prompt": "cmd",
+        "khol": "open",
+        "kholo": "open",
+
+        "chalu karo": "open",
+        "start karo": "open",
     }
 
-    for old, new in replacements.items():
-        text = text.replace(old, new)
+    for wrong, correct in replacements.items():
 
-    print(f"Normalized command: {text}")
+        text = text.replace(
+            wrong,
+            correct
+        )
 
     # ==================================
-    # YOUTUBE SEARCH (GENERALIZED)
+    # KEEP SEARCH COMMANDS INTACT
     # ==================================
 
-    if "youtube" in text and (
-        "search" in text
-        or "play" in text
+    search_words = [
+
+        "search",
+        "play",
+        "find",
+        "look up"
+    ]
+
+    if any(
+        word in text
+        for word in search_words
+    ):
+        return text
+
+    # ==================================
+    # OPEN SHORTCUTS
+    # ==================================
+
+    shortcuts = {
+
+        "chrome": "open chrome",
+        "youtube": "open youtube",
+        "google": "open google",
+        "calculator": "open calculator",
+        "settings": "open settings",
+        "notepad": "open notepad",
+        "cmd": "open cmd",
+        "terminal": "open terminal",
+        "powershell": "open powershell",
+        "task manager": "open task manager",
+        "explorer": "open explorer",
+        "vscode": "open vscode",
+        "vs code": "open vscode",
+    }
+
+    for key, value in shortcuts.items():
+
+        if (
+            text == key
+            or text.endswith(key)
+        ):
+
+            return value
+
+    return text
+# ======================================
+# OPEN APP
+# ======================================
+
+def open_app(app_name):
+
+    command = APP_PATHS.get(app_name)
+
+    if not command:
+        return None
+
+    try:
+
+        if command.startswith("start"):
+
+            os.system(command)
+
+        else:
+
+            subprocess.Popen(
+                command,
+                shell=True
+            )
+
+        return f"Opening {app_name.title()}"
+
+    except Exception:
+
+        return f"{app_name.title()} not found"
+
+
+# ======================================
+# SEARCH
+# ======================================
+
+def search_google(query):
+
+    webbrowser.open(
+        f"https://www.google.com/search?q={query}"
+    )
+
+    return (
+        f"Searching for {query}"
+    )
+
+
+def search_youtube(query):
+
+    webbrowser.open(
+        f"https://www.youtube.com/results?"
+        f"search_query={query}"
+    )
+
+    return (
+        f"Searching {query} on YouTube"
+    )
+
+
+# ======================================
+# EXECUTE COMMAND
+# ======================================
+
+def execute_command(text):
+
+    text = normalize_text(text)
+
+    print(
+        f"Normalized command: {text}"
+    )
+
+    # ==================================
+    # YOUTUBE SEARCH
+    # ==================================
+
+    youtube_patterns = [
+
+        "search",
+        "play",
+        "youtube"
+    ]
+
+    if (
+        "youtube" in text
+        and any(
+            x in text
+            for x in youtube_patterns
+        )
     ):
 
         query = text
@@ -101,270 +245,210 @@ def execute_command(text):
         ]
 
         for word in remove_words:
+
             query = query.replace(
-                word, ""
+                word,
+                ""
             )
 
         query = query.strip()
 
         if query:
 
-            webbrowser.open(
-                f"https://www.youtube.com/results?search_query={query}"
-            )
-
-            return (
-                f"Searching {query} on YouTube"
+            return search_youtube(
+                query
             )
 
     # ==================================
-    # GOOGLE SEARCH (GENERALIZED)
+    # GOOGLE SEARCH
     # ==================================
 
     if (
-        "search" in text
+        text.startswith("search ")
         or text.startswith("google ")
     ):
 
         query = text
 
-        remove_words = [
+        for word in [
 
             "search",
             "google",
             "open"
-        ]
-
-        for word in remove_words:
+        ]:
 
             query = query.replace(
-                word, ""
+                word,
+                ""
             )
 
         query = query.strip()
 
         if query:
 
-            webbrowser.open(
-                f"https://www.google.com/search?q={query}"
+            return search_google(
+                query
             )
 
+    # ==================================
+    # OPEN WEBSITE
+    # ==================================
+
+    websites = {
+
+        "youtube":
+        "https://youtube.com",
+
+        "google":
+        "https://google.com",
+
+        "github":
+        "https://github.com",
+
+        "gmail":
+        "https://mail.google.com",
+
+        "chatgpt":
+        "https://chat.openai.com",
+
+        "linkedin":
+        "https://linkedin.com",
+
+        "instagram":
+        "https://instagram.com",
+
+        "facebook":
+        "https://facebook.com",
+
+        "twitter":
+        "https://twitter.com",
+    }
+
+    for name, url in websites.items():
+
+        if (
+            f"open {name}" in text
+            or text == name
+        ):
+
+            webbrowser.open(url)
+
             return (
-                f"Searching for {query}"
+                f"Opening {name.title()}"
             )
 
     # ==================================
     # OPEN APPS
     # ==================================
 
-    if "open chrome" in text:
+    for app in APP_PATHS.keys():
 
-        try:
+        if (
+            f"open {app}" in text
+            or text == app
+        ):
 
-            os.system(
-                "start chrome"
-            )
+            return open_app(app)
 
-            return (
-                "Opening Chrome"
-            )
+    # ==================================
+    # FOLDERS
+    # ==================================
 
-        except:
+    folders = {
 
-            chrome_paths = [
+        "downloads":
+        os.path.join(
+            os.path.expanduser("~"),
+            "Downloads"
+        ),
 
-                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "documents":
+        os.path.join(
+            os.path.expanduser("~"),
+            "Documents"
+        ),
 
-                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        "desktop":
+        os.path.join(
+            os.path.expanduser("~"),
+            "Desktop"
+        ),
+    }
 
-                os.path.expandvars(
-                    r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"
-                )
-            ]
+    for name, path in folders.items():
 
-            for path in chrome_paths:
-
-                if os.path.exists(path):
-
-                    subprocess.Popen(path)
-
-                    return (
-                        "Opening Chrome"
-                    )
-
-            return (
-                "Chrome not found"
-            )
-
-    elif (
-        "open vs code" in text
-        or "open vscode" in text
-    ):
-
-        try:
+        if (
+            f"open {name}" in text
+        ):
 
             subprocess.Popen(
-                "code"
+                f'explorer "{path}"'
             )
 
             return (
-                "Opening VS Code"
+                f"Opening {name}"
             )
 
-        except:
+    # ==================================
+    # SYSTEM COMMANDS
+    # ==================================
 
-            vscode_paths = [
-
-                r"C:\Users\Milan\AppData\Local\Programs\Microsoft VS Code\Code.exe",
-
-                r"C:\Program Files\Microsoft VS Code\Code.exe",
-            ]
-
-            for path in vscode_paths:
-
-                if os.path.exists(path):
-
-                    subprocess.Popen(path)
-
-                    return (
-                        "Opening VS Code"
-                    )
-
-            return (
-                "VS Code not found"
-            )
-
-    elif "open cmd" in text:
-
-        subprocess.Popen("cmd")
-
-        return (
-            "Opening Command Prompt"
-        )
-
-    elif "open terminal" in text:
-
-        subprocess.Popen("wt")
-
-        return (
-            "Opening Terminal"
-        )
-
-    elif "powershell" in text:
-
-        subprocess.Popen(
-            "powershell"
-        )
-
-        return (
-            "Opening PowerShell"
-        )
-
-    elif "open calculator" in text:
-
-        subprocess.Popen(
-            "calc"
-        )
-
-        return (
-            "Opening Calculator"
-        )
-
-    elif "open notepad" in text:
-
-        subprocess.Popen(
-            "notepad"
-        )
-
-        return (
-            "Opening Notepad"
-        )
-
-    elif "open settings" in text:
+    if "shutdown" in text:
 
         os.system(
-            "start ms-settings:"
+            "shutdown /s /t 5"
         )
 
         return (
-            "Opening Settings"
+            "Shutting down PC"
         )
 
-    elif "task manager" in text:
+    if "restart" in text:
 
-        subprocess.Popen(
-            "taskmgr"
-        )
-
-        return (
-            "Opening Task Manager"
-        )
-
-    elif (
-        "file explorer" in text
-        or "explorer" in text
-    ):
-
-        subprocess.Popen(
-            "explorer"
+        os.system(
+            "shutdown /r /t 5"
         )
 
         return (
-            "Opening File Explorer"
+            "Restarting PC"
+        )
+
+    if "lock pc" in text:
+
+        os.system(
+            "rundll32.exe user32.dll,LockWorkStation"
+        )
+
+        return (
+            "Locking PC"
         )
 
     # ==================================
-    # WEB APPS
+    # VOLUME
     # ==================================
 
-    elif "open youtube" in text:
+    if "mute" in text:
 
-        webbrowser.open(
-            "https://www.youtube.com"
+        os.system(
+            "nircmd.exe mutesysvolume 1"
         )
 
-        return (
-            "Opening YouTube"
+        return "Muted"
+
+    if "volume up" in text:
+
+        os.system(
+            "nircmd.exe changesysvolume 5000"
         )
 
-    elif "open google" in text:
+        return "Volume increased"
 
-        webbrowser.open(
-            "https://www.google.com"
+    if "volume down" in text:
+
+        os.system(
+            "nircmd.exe changesysvolume -5000"
         )
 
-        return (
-            "Opening Google"
-        )
-
-    elif "github" in text:
-
-        webbrowser.open(
-            "https://github.com"
-        )
-
-        return (
-            "Opening GitHub"
-        )
-
-    elif "gmail" in text:
-
-        webbrowser.open(
-            "https://mail.google.com"
-        )
-
-        return (
-            "Opening Gmail"
-        )
-
-    elif "chatgpt" in text:
-
-        webbrowser.open(
-            "https://chat.openai.com"
-        )
-
-        return (
-            "Opening ChatGPT"
-        )
+        return "Volume decreased"
 
     return None
