@@ -73,9 +73,7 @@ exit_words = [
     "bye robin",
     "bye bye robin",
     "goodbye robin",
-    "ok robin bye",
-    "okay robin bye",
-    "ok bye"
+    
 ]
 
 
@@ -90,8 +88,12 @@ sleep_words = [
     "stop listening",
     "nothing else",
     "no more",
+    "ok robin bye",
+    "okay robin bye",
     "see you later",
     "talk to you later",
+    
+    "ok bye"
 ]
 
 
@@ -275,7 +277,7 @@ try:
             if not text:
 
                 speak(
-                    "Going back to sleep boss."
+                    "."
                 )
 
                 break

@@ -143,6 +143,27 @@ def should_retry_hinglish(text):
 # ======================================
 
 def clean_text(text):
+    replacements = {
+
+    # explain fixes
+    "co explain": "ko explain",
+    "co-explain": "ko explain",
+    "coexplain": "ko explain",
+    "go explain": "ko explain",
+    "to explain": "ko explain",
+
+    # kholo mistakes
+    "kolu": "kholo",
+    "kolo": "kholo",
+    "fullo": "kholo",
+    "follow": "kholo",
+    "openo": "open",
+    "prom": "chrome",
+
+    # whisper weirdness
+    "youtube follow": "youtube kholo",
+    "youtube kolu": "youtube kholo",
+}
 
     text = text.lower().strip()
 
