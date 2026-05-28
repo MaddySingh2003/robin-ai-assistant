@@ -11,4 +11,5 @@ __pycache__/
 temp_audio.wav
 
 # Other folders
-piper/
+
+espeak-ng-data/
