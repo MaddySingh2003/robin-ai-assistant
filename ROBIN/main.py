@@ -3,6 +3,10 @@ from core.brain import ask_api
 from core.speaker import speak
 from assistant.router import route_request
 from core.wake_word import wait_for_wake_word
+from core.memory import (
+    remember,
+    recall
+)
 
 import time
 import sys
@@ -17,7 +21,9 @@ print(
     "I'm ROBIN, your AI assistant."
 )
 
-print("Say 'exit' to quit\n")
+print(
+    "Say 'exit' to quit\n"
+)
 
 
 # =====================================
@@ -54,7 +60,7 @@ simple_replies = {
         "Good morning boss!",
 
     "good night":
-        "Good night boss!",
+        "Good night boss!"
 }
 
 
@@ -66,12 +72,11 @@ exit_words = [
 
     "exit",
     "quit",
-    "turn off",
     "close robin",
     "bye robin",
     "bye bye robin",
     "goodbye robin",
-    
+    "turn off robin",
 ]
 
 
@@ -90,7 +95,6 @@ sleep_words = [
     "okay robin bye",
     "see you later",
     "talk to you later",
-    
     "ok bye"
 ]
 
@@ -107,29 +111,34 @@ def clean_user_text(text):
 
         # Python mistakes
         "pythin": "python",
-        "pythin": "python",
-        "pythin'": "python",
         "wyton": "python",
         "wythin": "python",
         "ayythan": "python",
         "pythons": "python",
 
-        # explain mistakes
+        # Explain mistakes
         "explainkr": "explain kar",
         "explain kro": "explain karo",
         "explate": "explain",
 
-        # hinglish mistakes
+        # Hinglish mistakes
         "hingling": "hinglish",
         "hinglis": "hinglish",
         "hingaleish": "hinglish",
         "hing lish": "hinglish",
 
-        # chrome mistakes
+        # Chrome mistakes
         "grom": "chrome",
         "rome": "chrome",
+        "chchrome": "chrome",
+
+        # Speech mistakes
         "holo": "kholo",
         "kolo": "kholo",
+
+        # VSCode
+        "vs code": "vscode",
+        "v s code": "vscode",
     }
 
     for wrong, right in fixes.items():
@@ -143,7 +152,7 @@ def clean_user_text(text):
         f"🧹 Cleaned: {text}"
     )
 
-    return text
+    return text.strip()
 
 
 # =====================================
@@ -152,18 +161,13 @@ def clean_user_text(text):
 
 def build_prompt(text, clean_text):
 
-    # ---------------------
-    # English Mode
-    # ---------------------
-
     english_keywords = [
 
         "english",
         "in english",
         "english me",
         "english mein",
-        "explain in english",
-        "only english",
+        "only english"
     ]
 
     if any(
@@ -172,42 +176,32 @@ def build_prompt(text, clean_text):
     ):
 
         return f"""
-Explain in SIMPLE English.
+Reply in SIMPLE English.
 
-STRICT RULES:
+Rules:
 - English only
 - Short answer
 - Beginner friendly
-- Natural voice assistant
 
-Question:
+User:
 {text}
 """
-
-    # ---------------------
-    # Hinglish Mode
-    # ---------------------
 
     hinglish_keywords = [
 
         "hinglish",
-        "hinglish me",
-        "hinglish mein",
         "batao",
         "samjhao",
         "samjha",
         "explain karo",
-        "explain kro",
         "kya",
         "tum",
         "aap",
         "kar",
         "karo",
         "kr",
-        "sakta",
-        "sakti",
         "ke bare me",
-        "python ko",
+        "python ko"
     ]
 
     if any(
@@ -216,17 +210,15 @@ Question:
     ):
 
         return f"""
-Explain in SIMPLE Hinglish.
+Reply in SIMPLE Hinglish.
 
-STRICT RULES:
-- Hindi ONLY in English letters
-- NEVER Hindi script
-- NEVER pure English
-- Natural Indian style
+Rules:
+- Hindi in English letters only
+- No Hindi script
 - Short answer
-- Female assistant speaking style
+- Natural Indian style
 
-Question:
+User:
 {text}
 """
 
@@ -241,25 +233,27 @@ try:
 
     while True:
 
-        # ==============================
+        # ==========================
         # WAIT FOR WAKE WORD
-        # ==============================
+        # ==========================
 
         wait_for_wake_word()
 
-        speak("Yes boss")
+        speak(
+            "Yes boss"
+        )
 
         time.sleep(0.3)
 
-        # ==============================
+        # ==========================
         # ACTIVE MODE
-        # ==============================
+        # ==========================
 
         while True:
 
             text = None
 
-            # retry 3 times
+            # Retry listening
             for _ in range(3):
 
                 text = listen()
@@ -271,11 +265,11 @@ try:
                     "Retry listening..."
                 )
 
-            # No speech
+            # No speech detected
             if not text:
 
                 speak(
-                    "."
+                    "Going to sleep boss."
                 )
 
                 break
@@ -291,9 +285,9 @@ try:
                 text
             )
 
-            # ==============================
+            # ==========================
             # EXIT
-            # ==============================
+            # ==========================
 
             if any(
                 word in clean_text
@@ -310,9 +304,9 @@ try:
 
                 sys.exit()
 
-            # ==============================
+            # ==========================
             # SLEEP
-            # ==============================
+            # ==========================
 
             if any(
                 word in clean_text
@@ -325,9 +319,9 @@ try:
 
                 break
 
-            # ==============================
+            # ==========================
             # SIMPLE CHAT
-            # ==============================
+            # ==========================
 
             if clean_text in simple_replies:
 
@@ -342,13 +336,57 @@ try:
                     response
                 )
 
-                speak(response)
+                speak(
+                    response
+                )
 
                 continue
 
-            # ==============================
+            # ==========================
+            # MEMORY RECALL
+            # ==========================
+
+            memory_response = recall(
+                clean_text
+            )
+
+            if memory_response:
+
+                print(
+                    "ROBIN:",
+                    memory_response
+                )
+
+                speak(
+                    memory_response
+                )
+
+                continue
+
+            # ==========================
+            # MEMORY SAVE
+            # ==========================
+
+            memory_save = remember(
+                clean_text
+            )
+
+            if memory_save:
+
+                print(
+                    "ROBIN:",
+                    memory_save
+                )
+
+                speak(
+                    memory_save
+                )
+
+                continue
+
+            # ==========================
             # COMMAND ROUTER
-            # ==============================
+            # ==========================
 
             result = route_request(
                 clean_text
@@ -361,10 +399,8 @@ try:
                 == "command"
             ):
 
-                response = (
-                    result.get(
-                        "response"
-                    )
+                response = result.get(
+                    "response"
                 )
 
                 if response:
@@ -374,22 +410,21 @@ try:
                         response
                     )
 
-                    speak(response)
+                    speak(
+                        response
+                    )
 
                 else:
 
                     speak(
-                        "Sorry boss, "
-                        "I couldn't "
-                        "understand "
-                        "that command."
+                        "Sorry boss, I couldn't understand that command."
                     )
 
                 continue
 
-            # ==============================
+            # ==========================
             # AI MODE
-            # ==============================
+            # ==========================
 
             final_prompt = build_prompt(
                 text,
@@ -405,11 +440,12 @@ try:
                 response
             )
 
-            speak(response)
+            speak(
+                response
+            )
 
 except KeyboardInterrupt:
 
     print(
-        "\nROBIN: "
-        "Shutting down. Goodbye!"
+        "\nROBIN: Shutting down. Goodbye!"
     )
