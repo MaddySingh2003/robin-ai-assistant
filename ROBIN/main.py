@@ -66,8 +66,6 @@ exit_words = [
 
     "exit",
     "quit",
-    "shutdown",
-    "shut down",
     "turn off",
     "close robin",
     "bye robin",

@@ -45,92 +45,49 @@ def detect_language(text):
 
     text = text.lower().strip()
 
-    # --------------------------
-    # Hindi script → Hinglish
-    # --------------------------
-
-    if re.search(
-        r'[\u0900-\u097F]',
-        text
-    ):
+    # Hindi script
+    if re.search(r'[\u0900-\u097F]', text):
         return "hinglish"
 
-    # --------------------------
-    # Hinglish words
-    # --------------------------
-
-    hinglish_words = [
+    hinglish_words = {
 
         "hai",
-        "ho",
-        "hoo",
-        "hota",
-        "hoti",
         "kar",
         "karo",
-        "kr",
-        "ko",
         "ka",
         "ki",
         "ke",
+        "ko",
         "ek",
-        "jo",
         "kya",
         "kaise",
         "kyun",
-        "tum",
         "aap",
+        "tum",
         "mujhe",
         "mera",
         "samjhao",
         "batao",
-        "banati",
-        "easy banati",
-        "use hota",
         "sakta",
         "sakti"
-    ]
+    }
 
-    hinglish_score = sum(
-        word in text
-        for word in hinglish_words
+    words = set(
+        re.findall(
+            r"\b\w+\b",
+            text
+        )
     )
 
-    # --------------------------
-    # English words
-    # --------------------------
-
-    english_words = [
-
-        "what",
-        "why",
-        "where",
-        "when",
-        "how",
-        "thank you",
-        "hello",
-        "goodbye",
-        "anything else",
-        "used for",
-        "programming language",
-        "development",
-        "artificial intelligence",
-        "readability",
-        "learning"
-    ]
-
-    english_score = sum(
-        word in text
-        for word in english_words
+    matches = len(
+        words.intersection(
+            hinglish_words
+        )
     )
 
-    # Hinglish wins
-    if hinglish_score >= 2:
+    # stricter detection
+    if matches >= 3:
         return "hinglish"
-
-    # English
-    if english_score >= 1:
-        return "english"
 
     return "english"
 

@@ -52,9 +52,6 @@ APP_PATHS = {
 # NORMALIZE TEXT
 # ======================================
 
-import re
-
-
 def normalize_text(text):
 
     text = text.lower().strip()
@@ -65,85 +62,36 @@ def normalize_text(text):
         text
     )
 
-    # ==================================
-    # WHISPER FIXES
-    # ==================================
-
     replacements = {
 
         "grom": "chrome",
         "krom": "chrome",
         "crome": "chrome",
+        "chchrome": "chrome",
 
         "you tube": "youtube",
         "u tube": "youtube",
 
-        "v s code": "vs code",
-        "vs-code": "vs code",
+        "v s code": "vscode",
+        "vs code": "vscode",
+        "visual studio": "vscode",
 
         "khol": "open",
         "kholo": "open",
 
-        "chalu karo": "open",
         "start karo": "open",
+        "chalu karo": "open",
+
+        "perch": "search",
+        "serch": "search",
     }
 
-    for wrong, correct in replacements.items():
+    for wrong, right in replacements.items():
+        text = text.replace(wrong, right)
 
-        text = text.replace(
-            wrong,
-            correct
-        )
+    return text.strip()
 
-    # ==================================
-    # KEEP SEARCH COMMANDS INTACT
-    # ==================================
 
-    search_words = [
-
-        "search",
-        "play",
-        "find",
-        "look up"
-    ]
-
-    if any(
-        word in text
-        for word in search_words
-    ):
-        return text
-
-    # ==================================
-    # OPEN SHORTCUTS
-    # ==================================
-
-    shortcuts = {
-
-        "chrome": "open chrome",
-        "youtube": "open youtube",
-        "google": "open google",
-        "calculator": "open calculator",
-        "settings": "open settings",
-        "notepad": "open notepad",
-        "cmd": "open cmd",
-        "terminal": "open terminal",
-        "powershell": "open powershell",
-        "task manager": "open task manager",
-        "explorer": "open explorer",
-        "vscode": "open vscode",
-        "vs code": "open vscode",
-    }
-
-    for key, value in shortcuts.items():
-
-        if (
-            text == key
-            or text.endswith(key)
-        ):
-
-            return value
-
-    return text
 # ======================================
 # OPEN APP
 # ======================================
@@ -158,11 +106,9 @@ def open_app(app_name):
     try:
 
         if command.startswith("start"):
-
             os.system(command)
 
         else:
-
             subprocess.Popen(
                 command,
                 shell=True
@@ -171,12 +117,11 @@ def open_app(app_name):
         return f"Opening {app_name.title()}"
 
     except Exception:
-
         return f"{app_name.title()} not found"
 
 
 # ======================================
-# SEARCH
+# SEARCH FUNCTIONS
 # ======================================
 
 def search_google(query):
@@ -185,21 +130,98 @@ def search_google(query):
         f"https://www.google.com/search?q={query}"
     )
 
-    return (
-        f"Searching for {query}"
-    )
+    return f"Searching for {query}"
 
 
 def search_youtube(query):
 
     webbrowser.open(
-        f"https://www.youtube.com/results?"
-        f"search_query={query}"
+        f"https://www.youtube.com/results?search_query={query}"
     )
 
-    return (
-        f"Searching {query} on YouTube"
+    return f"Searching {query} on YouTube"
+
+
+# ======================================
+# WINDOWS VOLUME CONTROL
+# ======================================
+
+def send_media_key(key):
+
+    try:
+
+        script = f"""
+        (New-Object -ComObject WScript.Shell)
+        .SendKeys([char]{key})
+        """
+
+        subprocess.run(
+            [
+                "powershell",
+                "-Command",
+                script
+            ],
+            capture_output=True
+        )
+
+        return True
+
+    except Exception as e:
+
+        print("Volume Error:", e)
+        return False
+
+
+# ======================================
+# CREATE FILE IN VSCODE
+# ======================================
+
+def create_file_in_vscode(text):
+
+    extensions = {
+
+        "python": ".py",
+        "javascript": ".js",
+        "html": ".html",
+        "css": ".css",
+        "java": ".java",
+        "json": ".json",
+        "text": ".txt"
+    }
+
+    detected_extension = ".txt"
+
+    for lang, ext in extensions.items():
+
+        if lang in text:
+            detected_extension = ext
+            break
+
+    filename = f"new_file{detected_extension}"
+
+    desktop = os.path.join(
+        os.path.expanduser("~"),
+        "Desktop"
     )
+
+    file_path = os.path.join(
+        desktop,
+        filename
+    )
+
+    with open(
+        file_path,
+        "w",
+        encoding="utf-8"
+    ) as file:
+        file.write("")
+
+    subprocess.Popen(
+        f'code "{file_path}"',
+        shell=True
+    )
+
+    return f"Created {filename} in VSCode"
 
 
 # ======================================
@@ -215,22 +237,26 @@ def execute_command(text):
     )
 
     # ==================================
+    # CREATE FILE IN VSCODE
+    # ==================================
+
+    if (
+        "create" in text
+        and "file" in text
+        and "vscode" in text
+    ):
+
+        return create_file_in_vscode(text)
+
+    # ==================================
     # YOUTUBE SEARCH
     # ==================================
 
-    youtube_patterns = [
+    if "youtube" in text and (
 
-        "search",
-        "play",
-        "youtube"
-    ]
-
-    if (
-        "youtube" in text
-        and any(
-            x in text
-            for x in youtube_patterns
-        )
+        "search" in text
+        or "play" in text
+        or "find" in text
     ):
 
         query = text
@@ -239,25 +265,19 @@ def execute_command(text):
 
             "search",
             "play",
+            "find",
             "youtube",
             "on youtube",
             "open"
         ]
 
         for word in remove_words:
-
-            query = query.replace(
-                word,
-                ""
-            )
+            query = query.replace(word, "")
 
         query = query.strip()
 
         if query:
-
-            return search_youtube(
-                query
-            )
+            return search_youtube(query)
 
     # ==================================
     # GOOGLE SEARCH
@@ -271,27 +291,19 @@ def execute_command(text):
         query = text
 
         for word in [
-
             "search",
             "google",
             "open"
         ]:
-
-            query = query.replace(
-                word,
-                ""
-            )
+            query = query.replace(word, "")
 
         query = query.strip()
 
         if query:
-
-            return search_google(
-                query
-            )
+            return search_google(query)
 
     # ==================================
-    # OPEN WEBSITE
+    # OPEN WEBSITES
     # ==================================
 
     websites = {
@@ -316,12 +328,6 @@ def execute_command(text):
 
         "instagram":
         "https://instagram.com",
-
-        "facebook":
-        "https://facebook.com",
-
-        "twitter":
-        "https://twitter.com",
     }
 
     for name, url in websites.items():
@@ -333,9 +339,7 @@ def execute_command(text):
 
             webbrowser.open(url)
 
-            return (
-                f"Opening {name.title()}"
-            )
+            return f"Opening {name.title()}"
 
     # ==================================
     # OPEN APPS
@@ -351,7 +355,7 @@ def execute_command(text):
             return open_app(app)
 
     # ==================================
-    # FOLDERS
+    # OPEN FOLDERS
     # ==================================
 
     folders = {
@@ -372,46 +376,38 @@ def execute_command(text):
         os.path.join(
             os.path.expanduser("~"),
             "Desktop"
-        ),
+        )
     }
 
     for name, path in folders.items():
 
-        if (
-            f"open {name}" in text
-        ):
+        if f"open {name}" in text:
 
             subprocess.Popen(
                 f'explorer "{path}"'
             )
 
-            return (
-                f"Opening {name}"
-            )
+            return f"Opening {name}"
 
     # ==================================
     # SYSTEM COMMANDS
     # ==================================
 
-    if "shutdown" in text:
+    if text == "shutdown":
 
         os.system(
             "shutdown /s /t 5"
         )
 
-        return (
-            "Shutting down PC"
-        )
+        return "Shutting down PC"
 
-    if "restart" in text:
+    if text == "restart":
 
         os.system(
             "shutdown /r /t 5"
         )
 
-        return (
-            "Restarting PC"
-        )
+        return "Restarting PC"
 
     if "lock pc" in text:
 
@@ -419,35 +415,33 @@ def execute_command(text):
             "rundll32.exe user32.dll,LockWorkStation"
         )
 
-        return (
-            "Locking PC"
-        )
+        return "Locking PC"
 
     # ==================================
-    # VOLUME
+    # VOLUME CONTROL
     # ==================================
 
-    if "mute" in text:
+    if text == "mute":
 
-        os.system(
-            "nircmd.exe mutesysvolume 1"
-        )
-
+        send_media_key(173)
         return "Muted"
+
+    if text == "unmute":
+
+        send_media_key(173)
+        return "Unmuted"
 
     if "volume up" in text:
 
-        os.system(
-            "nircmd.exe changesysvolume 5000"
-        )
+        for _ in range(5):
+            send_media_key(175)
 
         return "Volume increased"
 
     if "volume down" in text:
 
-        os.system(
-            "nircmd.exe changesysvolume -5000"
-        )
+        for _ in range(5):
+            send_media_key(174)
 
         return "Volume decreased"
 
