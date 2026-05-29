@@ -82,10 +82,17 @@ def remember(text):
         if match:
 
             project = (
-                match.group(1)
-                .strip()
-                .title()
-            )
+             match.group(1)
+            .strip()
+)
+
+            project = re.sub(
+    r"^(a|an|the)\s+",
+    "",
+    project
+)
+
+            project = project.title()
 
             memory["project"] = project
 
@@ -162,18 +169,40 @@ def recall(text):
 
     memory = load_memory()
 
+    words = set(
+        re.findall(
+            r"\b\w+\b",
+            text
+        )
+    )
+
     # =================================
-    # NAME RECALL
+    # NAME RECALL (GENERALIZED)
     # =================================
 
-    if any(
-        x in text
-        for x in [
+    name_keywords = {
 
-            "what is my name",
-            "do you know my name",
-            "tell me my name"
-        ]
+        "name",
+        "call",
+        "identity"
+    }
+
+    asking_keywords = {
+
+        "what",
+        "tell",
+        "know",
+        "remember"
+    }
+
+    if (
+        words.intersection(name_keywords)
+        and (
+            "my" in words
+            or words.intersection(
+                asking_keywords
+            )
+        )
     ):
 
         if "name" in memory:
@@ -189,29 +218,38 @@ def recall(text):
         )
 
     # =================================
-    # PROJECT RECALL
+    # PROJECT RECALL (GENERALIZED)
     # =================================
 
-    if any(
-        x in text
-        for x in [
+    project_keywords = {
 
-            "what am i building",
-            "what project am i building",
-            "what is my project"
-        ]
-    ):
+        "project",
+        "building",
+        "build",
+        "making",
+        "developing"
+    }
 
-        if "project" in memory:
+    if words.intersection(project_keywords):
+
+        if (
+            "what" in words
+            or "which" in words
+            or "my" in words
+            or "am" in words
+        ):
+
+            if "project" in memory:
+
+                return (
+                    f"You are building "
+                    f"{memory['project']}"
+                )
 
             return (
-                f"You are building "
-                f"{memory['project']}"
+                "I don't know "
+                "your project yet."
             )
 
-        return (
-            "I don't know "
-            "your project yet."
-        )
-
     return None
+
