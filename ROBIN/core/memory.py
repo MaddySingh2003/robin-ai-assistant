@@ -1,3 +1,10 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 import json
 import os
 import re
@@ -61,15 +68,17 @@ def remember(text):
 
     memory = load_memory()
 
-    # =================================
-    # PROJECT MEMORY FIRST
-    # =================================
+    # ------------------------------
+    # SAVE PROJECT
+    # ------------------------------
 
     project_patterns = [
 
         r"i am building (.+)",
         r"im building (.+)",
-        r"my project is (.+)",
+        r"i am making (.+)",
+        r"i am developing (.+)",
+        r"my project is (.+)"
     ]
 
     for pattern in project_patterns:
@@ -82,38 +91,29 @@ def remember(text):
         if match:
 
             project = (
-             match.group(1)
-            .strip()
-)
-
-            project = re.sub(
-    r"^(a|an|the)\s+",
-    "",
-    project
-)
-
-            project = project.title()
+                match.group(1)
+                .strip()
+                .title()
+            )
 
             memory["project"] = project
 
-            save_memory(
-                memory
-            )
+            save_memory(memory)
 
             return (
-                f"I will remember "
-                f"your project "
-                f"{project}"
+                f"I will remember your project {project}"
             )
 
-    # =================================
-    # NAME MEMORY
-    # =================================
+    # ------------------------------
+    # SAVE NAME
+    # ------------------------------
 
     name_patterns = [
 
         r"my name is (.+)",
-        r"call me (.+)",
+        r"i am (.+)",
+        r"im (.+)",
+        r"call me (.+)"
     ]
 
     for pattern in name_patterns:
@@ -125,42 +125,36 @@ def remember(text):
 
         if match:
 
-            name = (
+            value = (
                 match.group(1)
                 .strip()
                 .title()
             )
 
-            # Prevent bad memory
-            blocked_words = {
+            bad_values = {
 
-                "building",
-                "project",
-                "python",
-                "code"
+                "Building",
+                "Making",
+                "Developing",
+                "Learning",
+                "Coding"
             }
 
-            if (
-                name.lower()
-                not in blocked_words
-            ):
+            if value not in bad_values:
 
-                memory["name"] = name
+                memory["name"] = value
 
-                save_memory(
-                    memory
-                )
+                save_memory(memory)
 
                 return (
-                    f"Nice to meet "
-                    f"you {name}"
+                    f"Nice to meet you {value}"
                 )
 
     return None
 
 
 # ==================================
-# RECALL MEMORY
+# RECALL
 # ==================================
 
 def recall(text):
@@ -176,32 +170,15 @@ def recall(text):
         )
     )
 
-    # =================================
-    # NAME RECALL (GENERALIZED)
-    # =================================
-
-    name_keywords = {
-
-        "name",
-        "call",
-        "identity"
-    }
-
-    asking_keywords = {
-
-        "what",
-        "tell",
-        "know",
-        "remember"
-    }
+    # ------------------------------
+    # NAME RECALL
+    # ------------------------------
 
     if (
-        words.intersection(name_keywords)
+        "name" in words
         and (
             "my" in words
-            or words.intersection(
-                asking_keywords
-            )
+            or "what" in words
         )
     ):
 
@@ -213,15 +190,14 @@ def recall(text):
             )
 
         return (
-            "I don't know "
-            "your name yet."
+            "I don't know your name yet."
         )
 
-    # =================================
-    # PROJECT RECALL (GENERALIZED)
-    # =================================
+    # ------------------------------
+    # PROJECT RECALL
+    # ------------------------------
 
-    project_keywords = {
+    project_words = {
 
         "project",
         "building",
@@ -230,26 +206,39 @@ def recall(text):
         "developing"
     }
 
-    if words.intersection(project_keywords):
+    if words.intersection(
+        project_words
+    ):
 
-        if (
-            "what" in words
-            or "which" in words
-            or "my" in words
-            or "am" in words
-        ):
-
-            if "project" in memory:
-
-                return (
-                    f"You are building "
-                    f"{memory['project']}"
-                )
+        if "project" in memory:
 
             return (
-                "I don't know "
-                "your project yet."
+                f"You are building "
+                f"{memory['project']}"
             )
+
+        return (
+            "I don't know your project yet."
+        )
 
     return None
 
+
+# ==================================
+# CLEAR MEMORY
+# ==================================
+
+def clear_memory():
+
+    save_memory({})
+
+
+# ==================================
+# DEBUG
+# ==================================
+
+if __name__ == "__main__":
+
+    print(
+        load_memory()
+    )

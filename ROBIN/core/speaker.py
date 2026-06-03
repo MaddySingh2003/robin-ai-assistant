@@ -1,3 +1,10 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 import subprocess
 import os
 import time
@@ -49,27 +56,15 @@ def detect_language(text):
     if re.search(r'[\u0900-\u097F]', text):
         return "hinglish"
 
+    # Expanded, safe Hinglish word list that doesn't conflict with common English words
     hinglish_words = {
-
-        "hai",
-        "kar",
-        "karo",
-        "ka",
-        "ki",
-        "ke",
-        "ko",
-        "ek",
-        "kya",
-        "kaise",
-        "kyun",
-        "aap",
-        "tum",
-        "mujhe",
-        "mera",
-        "samjhao",
-        "batao",
-        "sakta",
-        "sakti"
+        "hai", "kar", "karo", "ka", "ki", "ke", "ko", "ek", "kya", "kaise",
+        "kyun", "aap", "tum", "mujhe", "mera", "samjhao", "batao", "sakta",
+        "sakti", "hu", "aur", "toh", "tha", "thi", "raha", "rahi", "rahe",
+        "hoga", "hogi", "hoge", "gaya", "gayi", "gaye", "karta", "karti",
+        "karte", "diya", "liya", "kiya", "kijiye", "karke", "chalo", "achha",
+        "accha", "badhiya", "theek", "batao", "samjha", "kholo", "chalu",
+        "niklo", "jao", "aao", "karna", "krna"
     }
 
     words = set(
@@ -85,8 +80,8 @@ def detect_language(text):
         )
     )
 
-    # stricter detection
-    if matches >= 3:
+    # If any Hinglish keywords are found, classify as Hinglish
+    if matches >= 1:
         return "hinglish"
 
     return "english"
@@ -133,7 +128,7 @@ def delete_audio(file_path):
 # SPEAK
 # ==========================================
 
-def speak(text):
+def speak(text, language=None):
 
     if not text:
         return
@@ -155,9 +150,10 @@ def speak(text):
     # Detect language
     # --------------------------------------
 
-    language = detect_language(
-        text
-    )
+    if language is None:
+        language = detect_language(
+            text
+        )
 
     print(
         f"Detected language: "

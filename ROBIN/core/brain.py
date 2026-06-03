@@ -1,10 +1,24 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 import ollama
 import re
+
+from core.memory_manager import (
+    get_memory_context
+)
 
 
 # =====================================
 # GLOBALS
 # =====================================
+
+# Configurable model name. "gemma3:1b" runs ultra-fast on CPU systems.
+OLLAMA_MODEL = "gemma3:1b"
 
 CURRENT_MODE = "english"
 LAST_MODE = "english"
@@ -42,19 +56,14 @@ Speak naturally like a female assistant.
 
 6. Beginner friendly.
 
+7. Use memory when available.
+
+8. If memory contains user facts,
+use them naturally.
+
 HINGLISH RULES:
 - Hindi ONLY in English letters
 - NEVER Hindi script
-- Natural Indian style
-
-GOOD:
-"Python ek programming language hai jo coding easy banati hai."
-
-BAD:
-"Python ke liye explain karega."
-
-BAD:
-"पायथन ek language hai"
 """
 
 
@@ -74,62 +83,37 @@ def detect_language_mode(text):
 
     text = text.lower().strip()
 
-    # Hindi script → Hinglish
-    if re.search(r'[\u0900-\u097F]', text):
+    if re.search(
+        r'[\u0900-\u097F]',
+        text
+    ):
         return "hinglish"
 
     words = set(
         re.findall(
-            r'\b\w+\b',
+            r"\b\w+\b",
             text
         )
     )
 
+    # Synchronized with speaker.py Hinglish vocabulary
     hinglish_words = {
-
-        "kya",
-        "kaise",
-        "kyun",
-        "tum",
-        "aap",
-        "mujhe",
-        "mera",
-        "ko",
-        "kar",
-        "karo",
-        "kr",
-        "hai",
-        "ho",
-        "nahi",
-        "sakta",
-        "sakti",
-        "samjhao",
-        "batao",
-        "matlab",
-        "yeh",
-        "ek",
-        "ki",
-        "ka"
+        "hai", "kar", "karo", "ka", "ki", "ke", "ko", "ek", "kya", "kaise",
+        "kyun", "aap", "tum", "mujhe", "mera", "samjhao", "batao", "sakta",
+        "sakti", "hu", "aur", "toh", "tha", "thi", "raha", "rahi", "rahe",
+        "hoga", "hogi", "hoge", "gaya", "gayi", "gaye", "karta", "karti",
+        "karte", "diya", "liya", "kiya", "kijiye", "karke", "chalo", "achha",
+        "accha", "badhiya", "theek", "batao", "samjha", "kholo", "chalu",
+        "niklo", "jao", "aao", "karna", "krna"
     }
 
-    if words.intersection(
-        hinglish_words
-    ):
-        return "hinglish"
+    matches = len(
+        words.intersection(
+            hinglish_words
+        )
+    )
 
-    hinglish_phrases = [
-
-        "ko explain",
-        "explain karo",
-        "explain kro",
-        "ke bare me",
-        "ka matlab"
-    ]
-
-    if any(
-        phrase in text
-        for phrase in hinglish_phrases
-    ):
+    if matches >= 1:
         return "hinglish"
 
     return "english"
@@ -141,7 +125,6 @@ def detect_language_mode(text):
 
 def clean_response(text):
 
-    # Remove code blocks
     text = re.sub(
         r"```.*?```",
         "",
@@ -149,21 +132,18 @@ def clean_response(text):
         flags=re.DOTALL
     )
 
-    # Remove quotes
     text = re.sub(
         r'[\"“”]',
         "",
         text
     )
 
-    # Remove Hindi script
     text = re.sub(
         r'[\u0900-\u097F]',
         "",
         text
     )
 
-    # Remove extra spaces
     text = re.sub(
         r"\s+",
         " ",
@@ -174,10 +154,10 @@ def clean_response(text):
 
 
 # =====================================
-# ASK AI
+# ASK AI STREAM
 # =====================================
 
-def ask_api(prompt):
+def ask_api_stream(prompt):
 
     global CURRENT_MODE
     global LAST_MODE
@@ -192,7 +172,7 @@ def ask_api(prompt):
     )
 
     # =================================
-    # RESET MEMORY ON LANGUAGE CHANGE
+    # RESET ON LANGUAGE CHANGE
     # =================================
 
     if mode != LAST_MODE:
@@ -212,7 +192,20 @@ def ask_api(prompt):
     CURRENT_MODE = mode
 
     # =================================
-    # LANGUAGE INSTRUCTIONS
+    # MEMORY SEARCH
+    # =================================
+
+    memory_context = get_memory_context(
+        prompt
+    )
+
+    print(
+        f"🧠 Memories Found: "
+        f"{len(memory_context.splitlines()) if memory_context else 0}"
+    )
+
+    # =================================
+    # LANGUAGE RULES
     # =================================
 
     if mode == "english":
@@ -220,17 +213,11 @@ def ask_api(prompt):
         language_instruction = """
 Reply ONLY in ENGLISH.
 
-STRICT RULES:
-- NO Hindi
-- NO Hinglish
+Rules:
+- No Hindi
+- No Hinglish
 - Short answer
 - Beginner friendly
-
-GOOD:
-Python is a programming language.
-
-BAD:
-Python ek programming language hai.
 """
 
     else:
@@ -238,33 +225,41 @@ Python ek programming language hai.
         language_instruction = """
 Reply ONLY in HINGLISH.
 
-STRICT RULES:
-- Hindi in English letters ONLY
-- NEVER Hindi script
+Rules:
+- Hindi in English letters only
+- Never Hindi script
 - Natural Indian style
 - Short answer
-
-GOOD:
-Python ek programming language hai jo coding easy banati hai.
-
-BAD:
-Python is a programming language.
 """
 
     # =================================
-    # SAVE USER MESSAGE
+    # USER MESSAGE
     # =================================
+
+    user_content = f"""
+{language_instruction}
+
+MEMORY:
+{memory_context}
+
+USER:
+{prompt}
+"""
 
     conversation_history.append(
         {
             "role": "user",
-            "content":
-            f"{language_instruction}\n\nUser: {prompt}"
+            "content": user_content
         }
     )
 
-    # Keep history short
-    if len(conversation_history) > MAX_HISTORY:
+    # =================================
+    # HISTORY LIMIT
+    # =================================
+
+    if len(
+        conversation_history
+    ) > MAX_HISTORY:
 
         conversation_history = (
             conversation_history[:1]
@@ -273,155 +268,89 @@ Python is a programming language.
 
     try:
 
-        response = ollama.chat(
-            model="qwen2.5:7b",
+        response_stream = ollama.chat(
+            model=OLLAMA_MODEL,
             messages=conversation_history,
             options={
-                "temperature": 0.1,
-                "top_p": 0.5,
-                "num_predict": 50,
-                "repeat_penalty": 1.2
-            }
+                "temperature": 0.2,
+                "top_p": 0.7,
+                "num_predict": 80,
+                "repeat_penalty": 1.1
+            },
+            stream=True
         )
 
-        ai_reply = (
-            response["message"]["content"]
-            .strip()
-        )
+        buffer = ""
+        full_reply = ""
+        sentence_yielded = False
+
+        for chunk in response_stream:
+
+            content = chunk["message"]["content"]
+            buffer += content
+            full_reply += content
+
+            # Split buffer into sentences on sentence boundaries or newlines
+            sentences = re.split(r'(?<=[.!?])\s+|\n+', buffer)
+
+            if len(sentences) > 1:
+
+                for sentence in sentences[:-1]:
+
+                    clean_sent = clean_response(sentence)
+
+                    if clean_sent:
+
+                        # Language enforcement for English mode
+                        if mode == "english" and re.search(r'[\u0900-\u097F]', clean_sent):
+                            clean_sent = "I can help with that."
+
+                        yield clean_sent
+                        sentence_yielded = True
+
+                buffer = sentences[-1]
+
+        # Yield any remaining text in buffer
+        if buffer.strip():
+
+            clean_sent = clean_response(buffer)
+
+            if clean_sent:
+
+                if mode == "english" and re.search(r'[\u0900-\u097F]', clean_sent):
+                    clean_sent = "I can help with that."
+
+                yield clean_sent
+                sentence_yielded = True
+
+        cleaned_full_reply = clean_response(full_reply)
+
+        # Fallback if reply is too short
+        if not sentence_yielded or len(cleaned_full_reply.strip()) < 3:
+
+            if mode == "hinglish":
+                fallback = "Main help kar sakti hu."
+            else:
+                fallback = "I can help with that."
+
+            yield fallback
+            cleaned_full_reply = fallback
 
         print(
-            "🤖 Raw:",
-            ai_reply
-        )
-
-        ai_reply = clean_response(
-            ai_reply
+            "🤖 Full Reply:",
+            cleaned_full_reply
         )
 
         # =================================
-        # LANGUAGE ENFORCEMENT
-        # =================================
-
-        hinglish_words = {
-
-            "hai",
-            "kar",
-            "karo",
-            "ko",
-            "ki",
-            "ka",
-            "ek",
-            "hota",
-            "hoti",
-            "madad",
-            "banati",
-            "samjhao",
-            "batao",
-            "aap",
-            "tum",
-            "main",
-            "sakta",
-            "sakti"
-        }
-
-        reply_words = set(
-            re.findall(
-                r'\b\w+\b',
-                ai_reply.lower()
-            )
-        )
-
-        # ---------------------------------
-        # ENGLISH MODE
-        # ---------------------------------
-
-        if mode == "english":
-
-            wrong_language = bool(
-                reply_words.intersection(
-                    hinglish_words
-                )
-            )
-
-            if wrong_language:
-
-                print(
-                    "⚠️ Wrong language fixed"
-                )
-
-                if "python" in prompt.lower():
-
-                    ai_reply = (
-                        "Python is a programming language used for coding."
-                    )
-
-                elif "api" in prompt.lower():
-
-                    ai_reply = (
-                        "An API helps software communicate with each other."
-                    )
-
-                else:
-
-                    ai_reply = (
-                        "I can help with that."
-                    )
-
-        # ---------------------------------
-        # HINGLISH MODE
-        # ---------------------------------
-
-        else:
-
-            english_only_patterns = [
-
-                "programming language",
-                "widely used",
-                "high-level",
-                "easy to learn"
-            ]
-
-            pure_english = any(
-                x in ai_reply.lower()
-                for x in english_only_patterns
-            )
-
-            if pure_english:
-
-                print(
-                    "⚠️ Fixing English → Hinglish"
-                )
-
-                if "python" in prompt.lower():
-
-                    ai_reply = (
-                        "Python ek programming language hai jo coding easy banati hai."
-                    )
-
-                elif "api" in prompt.lower():
-
-                    ai_reply = (
-                        "API ek system hai jo apps ko ek dusre se baat karne deta hai."
-                    )
-
-                else:
-
-                    ai_reply = (
-                        "Main help kar sakti hu."
-                    )
-
-        # =================================
-        # SAVE MEMORY
+        # SAVE ASSISTANT MESSAGE
         # =================================
 
         conversation_history.append(
             {
                 "role": "assistant",
-                "content": ai_reply
+                "content": cleaned_full_reply
             }
         )
-
-        return ai_reply
 
     except Exception as e:
 
@@ -430,6 +359,14 @@ Python is a programming language.
             e
         )
 
-        return (
-            "Sorry, something went wrong."
-        )
+        yield "Sorry, something went wrong."
+
+
+# =====================================
+# ASK AI (COMPATIBILITY WRAPPER)
+# =====================================
+
+def ask_api(prompt):
+
+    sentences = list(ask_api_stream(prompt))
+    return " ".join(sentences)

@@ -1,3 +1,10 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 import tempfile
 import sounddevice as sd
 from scipy.io.wavfile import write
@@ -14,27 +21,44 @@ print("Loading speech models...")
 
 
 # ======================================
+# DEVICE DETECTION & MODEL INITIALIZATION
+# ======================================
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+compute_type = "float16" if torch.cuda.is_available() else "int8"
+
+print(f"Device selected: {device} (compute_type: {compute_type})")
+
+# ======================================
 # FAST MODEL
 # ======================================
 
 fast_model = WhisperModel(
     "distil-large-v3",
-    device="cuda",
-    compute_type="int8_float16"
+    device=device,
+    compute_type=compute_type
 )
 
 
 # ======================================
-# HINGLISH MODEL
+# HINGLISH MODEL (LAZY LOADED)
 # ======================================
 
-hinglish_model = pipeline(
-    "automatic-speech-recognition",
-    model="Oriserve/Whisper-Hindi2Hinglish-Prime",
-    device=0 if torch.cuda.is_available() else -1
-)
+hinglish_model = None
 
-print("Speech models loaded!")
+def get_hinglish_model():
+    global hinglish_model
+    if hinglish_model is None:
+        print("⏳ Lazy loading Hinglish model (first time use)...")
+        hinglish_model = pipeline(
+            "automatic-speech-recognition",
+            model="Oriserve/Whisper-Hindi2Hinglish-Prime",
+            device=0 if torch.cuda.is_available() else -1
+        )
+        print("🔥 Hinglish model loaded!")
+    return hinglish_model
+
+print("Speech model (distil-large-v3) loaded!")
 
 
 # ======================================
@@ -288,31 +312,58 @@ def listen():
 
     try:
 
-        audio = sd.rec(
-            int(SAMPLE_RATE * DURATION),
+        # Record using InputStream to dynamically stop on silence
+        chunk_duration = 0.1  # 100ms chunks
+        chunk_size = int(SAMPLE_RATE * chunk_duration)
+        silence_limit = 1.0  # 1.0 second of silence to stop
+        max_duration = 8.0   # max 8 seconds total
+
+        audio_chunks = []
+        silence_chunks = 0
+        speaking = False
+
+        with sd.InputStream(
             samplerate=SAMPLE_RATE,
             channels=1,
             dtype="float32",
             device=MIC_DEVICE
-        )
+        ) as stream:
 
-        sd.wait()
+            start_time = time.time()
 
-        volume = (
-            np.nanmean(
-                np.abs(audio)
-            ) * 1000
-        )
+            while time.time() - start_time < max_duration:
 
-        print(f"🔊 Volume: {volume}")
+                chunk, overflowed = stream.read(chunk_size)
+                audio_chunks.append(chunk)
 
-        if volume < MIN_VOLUME:
+                # Calculate volume
+                volume = np.nanmean(np.abs(chunk)) * 1000
 
-            print(
-                "😒 no speech detected"
-            )
+                if volume > MIN_VOLUME:
+                    if not speaking:
+                        print("🗣️ Speaking detected...")
+                        speaking = True
+                    silence_chunks = 0
+                else:
+                    if speaking:
+                        silence_chunks += 1
+                        # If silence persists, stop recording
+                        if silence_chunks >= (silence_limit / chunk_duration):
+                            print("⏹️ Silence detected, stopping...")
+                            break
+                    else:
+                        # Timeout if no speech is detected within 2.5 seconds
+                        if time.time() - start_time > 2.5:
+                            print("😒 no speech detected")
+                            return None
 
+        if not audio_chunks:
             return None
+
+        audio = np.concatenate(audio_chunks, axis=0)
+
+        volume = np.nanmean(np.abs(audio)) * 1000
+        print(f"🔊 Volume: {volume:.2f}")
 
         print(
             "⏹️ Processing speech..."
@@ -332,13 +383,13 @@ def listen():
             )
 
         # ------------------------
-        # FAST MODEL
+        # FAST MODEL (beam_size=1 for speed on CPU)
         # ------------------------
 
         segments, info = (
             fast_model.transcribe(
                 temp_audio_path,
-                beam_size=5,
+                beam_size=1,
                 vad_filter=True,
                 language=None,
                 task="transcribe",
@@ -375,9 +426,13 @@ def listen():
 
             try:
 
-                result = hinglish_model(
-                    temp_audio_path
-                )
+                model = get_hinglish_model()
+
+                with torch.inference_mode():
+
+                    result = model(
+                        temp_audio_path
+                    )
 
                 better_text = (
                     result["text"]

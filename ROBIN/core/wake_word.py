@@ -1,3 +1,11 @@
+
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 from core.listener import listen
 import difflib
 import re
@@ -5,55 +13,48 @@ import time
 
 
 # ===================================
-# WAKE WORDS
+# CONFIG
 # ===================================
 
-WAKE_WORDS = [
+WAKE_NAME = "robin"
 
-    "robin",
-    "hey robin",
-    "hello robin",
-    "hi robin",
-
-    # common whisper mistakes
-    "robeen",
-    "robin robin",
-    "robinn",
-    "robbin",
-    "robin boss",
-    "hello र बन",
-    "halo robin",
-    "halo robeen",
-    "hey robbin",
-    "rovin",
-    "gobin",
-    "bnb",
-]
-
-# Hindi phonetic versions
-
-HINDI_PATTERNS = [
-
-    "रॉबिन",
-    "रोबिन",
-    "र बन",
-    "रबन",
-]
+FUZZY_THRESHOLD = 0.72
 
 
 # ===================================
-# NORMALIZE TEXT
+# CLEAN TEXT
 # ===================================
 
 def clean_text(text):
 
-    text = text.lower()
+    text = text.lower().strip()
 
+    # remove punctuation
     text = re.sub(
-        r"[^a-zA-Z\u0900-\u097F\s]",
+        r"[^\w\s\u0900-\u097F]",
         "",
         text
     )
+
+    # common whisper fixes
+    fixes = {
+
+        "robeen": "robin",
+        "robbin": "robin",
+        "robinn": "robin",
+        "rovin": "robin",
+        "gobin": "robin",
+
+        "halo": "hello",
+        "hay": "hey",
+    }
+
+    for wrong, right in fixes.items():
+
+        text = text.replace(
+            wrong,
+            right
+        )
 
     return text.strip()
 
@@ -68,36 +69,53 @@ def is_wake_word(text):
 
     print(f"👂 Heard: {text}")
 
-    # direct match
-
-    for wake in WAKE_WORDS:
-
-        if wake in text:
-            return True
-
-    # hindi match
-
-    for word in HINDI_PATTERNS:
-
-        if word in text:
-            return True
-
-    # fuzzy match
-
     words = text.split()
+
+    if not words:
+        return False
+
+    # -------------------------
+    # direct exact match
+    # -------------------------
+
+    if WAKE_NAME in words:
+        return True
+
+    # -------------------------
+    # phrase match
+    # -------------------------
+
+    wake_phrases = {
+
+        "hey robin",
+        "hello robin",
+        "hi robin",
+        "ok robin",
+    }
+
+    if text in wake_phrases:
+        return True
+
+    # -------------------------
+    # fuzzy match
+    # -------------------------
 
     for word in words:
 
         similarity = difflib.SequenceMatcher(
             None,
             word,
-            "robin"
+            WAKE_NAME
         ).ratio()
 
-        if similarity > 0.65:
+        if similarity >= FUZZY_THRESHOLD:
+
             print(
-                f"🎯 Similar word matched: {word}"
+                f"🎯 Wake match: "
+                f"{word} "
+                f"({similarity:.2f})"
             )
+
             return True
 
     return False
@@ -129,3 +147,12 @@ def wait_for_wake_word():
             return
 
         time.sleep(0.2)
+
+
+if __name__ == "__main__":
+
+    while True:
+
+        wait_for_wake_word()
+
+        print("ROBIN Activated")

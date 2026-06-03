@@ -1,11 +1,24 @@
+import sys
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 from core.listener import listen
-from core.brain import ask_api
+from core.brain import ask_api, ask_api_stream
+import core.brain
 from core.speaker import speak
 from assistant.router import route_request
 from core.wake_word import wait_for_wake_word
+
 from core.memory import (
     remember,
     recall
+)
+
+from core.memory_manager import (
+    auto_save_memory
 )
 
 import time
@@ -109,34 +122,28 @@ def clean_user_text(text):
 
     fixes = {
 
-        # Python mistakes
         "pythin": "python",
         "wyton": "python",
         "wythin": "python",
         "ayythan": "python",
         "pythons": "python",
 
-        # Explain mistakes
         "explainkr": "explain kar",
         "explain kro": "explain karo",
         "explate": "explain",
 
-        # Hinglish mistakes
         "hingling": "hinglish",
         "hinglis": "hinglish",
         "hingaleish": "hinglish",
         "hing lish": "hinglish",
 
-        # Chrome mistakes
         "grom": "chrome",
         "rome": "chrome",
         "chchrome": "chrome",
 
-        # Speech mistakes
         "holo": "kholo",
         "kolo": "kholo",
 
-        # VSCode
         "vs code": "vscode",
         "v s code": "vscode",
     }
@@ -233,10 +240,6 @@ try:
 
     while True:
 
-        # ==========================
-        # WAIT FOR WAKE WORD
-        # ==========================
-
         wait_for_wake_word()
 
         speak(
@@ -245,15 +248,10 @@ try:
 
         time.sleep(0.3)
 
-        # ==========================
-        # ACTIVE MODE
-        # ==========================
-
         while True:
 
             text = None
 
-            # Retry listening
             for _ in range(3):
 
                 text = listen()
@@ -265,7 +263,6 @@ try:
                     "Retry listening..."
                 )
 
-            # No speech detected
             if not text:
 
                 speak(
@@ -283,6 +280,14 @@ try:
 
             clean_text = clean_user_text(
                 text
+            )
+
+            # ==========================
+            # AUTO SAVE TO CHROMA
+            # ==========================
+
+            auto_save_memory(
+                clean_text
             )
 
             # ==========================
@@ -343,28 +348,7 @@ try:
                 continue
 
             # ==========================
-            # MEMORY RECALL
-            # ==========================
-
-            memory_response = recall(
-                clean_text
-            )
-
-            if memory_response:
-
-                print(
-                    "ROBIN:",
-                    memory_response
-                )
-
-                speak(
-                    memory_response
-                )
-
-                continue
-
-            # ==========================
-            # MEMORY SAVE
+            # JSON MEMORY SAVE
             # ==========================
 
             memory_save = remember(
@@ -380,6 +364,27 @@ try:
 
                 speak(
                     memory_save
+                )
+
+                continue
+
+            # ==========================
+            # JSON MEMORY RECALL
+            # ==========================
+
+            memory_response = recall(
+                clean_text
+            )
+
+            if memory_response:
+
+                print(
+                    "ROBIN:",
+                    memory_response
+                )
+
+                speak(
+                    memory_response
                 )
 
                 continue
@@ -431,18 +436,12 @@ try:
                 clean_text
             )
 
-            response = ask_api(
-                final_prompt
-            )
+            print("ROBIN: ", end="", flush=True)
 
-            print(
-                "ROBIN:",
-                response
-            )
-
-            speak(
-                response
-            )
+            for sentence in ask_api_stream(final_prompt):
+                print(sentence, end=" ", flush=True)
+                speak(sentence, language=core.brain.CURRENT_MODE)
+            print()
 
 except KeyboardInterrupt:
 
