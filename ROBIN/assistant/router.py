@@ -117,6 +117,26 @@ def detect_command_intent(text):
 
         "volume",
         "brightness",
+           "chrome",
+    "youtube",
+    "google",
+
+    "react",
+    "node",
+    "fastapi",
+    "api",
+    "angular",
+
+    "python",
+    "java",
+    "cpp",
+    "c",
+
+    "project",
+    "file",
+
+    "vscode",
+    "notepad",
     }
 
     words = set(text.split())

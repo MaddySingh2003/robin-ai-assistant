@@ -84,6 +84,15 @@ use them naturally.
 HINGLISH RULES:
 - Hindi ONLY in English letters
 - NEVER Hindi script
+Never claim you created a file,
+folder,
+project,
+website,
+application,
+or code unless the system explicitly tells you it was created.
+
+If you did not actually create it,
+say you cannot verify creation.
 """
 
 
