@@ -14,3 +14,7 @@ temp_audio.wav
 
 espeak-ng-data/
 
+
+.pytest_cache/
+
+memeory_db/

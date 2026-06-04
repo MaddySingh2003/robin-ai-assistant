@@ -1,16 +1,20 @@
 import sys
+
 try:
-    sys.stdout.reconfigure(encoding='utf-8')
-    sys.stderr.reconfigure(encoding='utf-8')
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 except AttributeError:
     pass
 
+import time
+
 from core.listener import listen
-from core.brain import ask_api, ask_api_stream
+from core.brain import ask_api_stream
 import core.brain
+
 from core.speaker import speak
-from assistant.router import route_request
 from core.wake_word import wait_for_wake_word
+from assistant.router import route_request
 
 from core.memory import (
     remember,
@@ -21,22 +25,17 @@ from core.memory_manager import (
     auto_save_memory
 )
 
-import time
-import sys
+from core.code_manager import (
+    generate_code_snippet
+)
 
 
 # =====================================
 # STARTUP
 # =====================================
 
-print(
-    "ROBIN: Hello! "
-    "I'm ROBIN, your AI assistant."
-)
-
-print(
-    "Say 'exit' to quit\n"
-)
+print("ROBIN: Hello! I'm ROBIN, your AI assistant.")
+print("Say 'exit' to quit\n")
 
 
 # =====================================
@@ -45,40 +44,30 @@ print(
 
 simple_replies = {
 
-    "kya haal hai":
-        "Main theek hu boss, aap batao?",
+    "hello": "Hello boss!",
 
-    "kaise ho":
-        "Main badhiya hu boss.",
+    "hi": "Hi boss!",
 
-    "hello":
-        "Hello boss!",
+    "hello robin": "Hello boss!",
 
-    "hi":
-        "Hi boss!",
+    "hey robin": "Yes boss?",
 
-    "hello robin":
-        "Hello boss!",
+    "thank you": "Welcome boss.",
 
-    "hey robin":
-        "Yes boss?",
+    "thanks": "No problem boss.",
 
-    "thank you":
-        "Welcome boss.",
+    "good morning": "Good morning boss!",
 
-    "thanks":
-        "No problem boss.",
+    "good night": "Good night boss!",
 
-    "good morning":
-        "Good morning boss!",
+    "kaise ho": "Main badhiya hu boss.",
 
-    "good night":
-        "Good night boss!"
+    "kya haal hai": "Main theek hu boss, aap batao?"
 }
 
 
 # =====================================
-# EXIT COMMANDS
+# EXIT WORDS
 # =====================================
 
 exit_words = [
@@ -89,12 +78,12 @@ exit_words = [
     "bye robin",
     "bye bye robin",
     "goodbye robin",
-    "turn off robin",
+    "turn off robin"
 ]
 
 
 # =====================================
-# SLEEP COMMANDS
+# SLEEP WORDS
 # =====================================
 
 sleep_words = [
@@ -113,7 +102,7 @@ sleep_words = [
 
 
 # =====================================
-# CLEAN USER TEXT
+# CLEAN TEXT
 # =====================================
 
 def clean_user_text(text):
@@ -125,39 +114,27 @@ def clean_user_text(text):
         "pythin": "python",
         "wyton": "python",
         "wythin": "python",
-        "ayythan": "python",
-        "pythons": "python",
 
         "explainkr": "explain kar",
         "explain kro": "explain karo",
-        "explate": "explain",
-
-        "hingling": "hinglish",
-        "hinglis": "hinglish",
-        "hingaleish": "hinglish",
-        "hing lish": "hinglish",
 
         "grom": "chrome",
         "rome": "chrome",
-        "chchrome": "chrome",
-
-        "holo": "kholo",
-        "kolo": "kholo",
 
         "vs code": "vscode",
         "v s code": "vscode",
+
+        "holo": "kholo",
+        "kolo": "kholo"
     }
 
     for wrong, right in fixes.items():
-
         text = text.replace(
             wrong,
             right
         )
 
-    print(
-        f"🧹 Cleaned: {text}"
-    )
+    print(f"🧹 Cleaned: {text}")
 
     return text.strip()
 
@@ -168,46 +145,17 @@ def clean_user_text(text):
 
 def build_prompt(text, clean_text):
 
-    english_keywords = [
-
-        "english",
-        "in english",
-        "english me",
-        "english mein",
-        "only english"
-    ]
-
-    if any(
-        word in clean_text
-        for word in english_keywords
-    ):
-
-        return f"""
-Reply in SIMPLE English.
-
-Rules:
-- English only
-- Short answer
-- Beginner friendly
-
-User:
-{text}
-"""
-
     hinglish_keywords = [
 
         "hinglish",
         "batao",
         "samjhao",
         "samjha",
-        "explain karo",
         "kya",
-        "tum",
-        "aap",
+        "kaise",
         "kar",
         "karo",
         "kr",
-        "ke bare me",
         "python ko"
     ]
 
@@ -223,13 +171,37 @@ Rules:
 - Hindi in English letters only
 - No Hindi script
 - Short answer
-- Natural Indian style
 
 User:
 {text}
 """
 
     return text
+
+
+# =====================================
+# CODE REQUEST DETECTION
+# =====================================
+
+def is_code_request(text):
+
+    keywords = [
+
+        "write code",
+        "generate code",
+        "python code",
+        "javascript code",
+        "html code",
+        "css code",
+        "create function",
+        "make function",
+        "create class"
+    ]
+
+    return any(
+        key in text
+        for key in keywords
+    )
 
 
 # =====================================
@@ -242,9 +214,7 @@ try:
 
         wait_for_wake_word()
 
-        speak(
-            "Yes boss"
-        )
+        speak("Yooohoo")
 
         time.sleep(0.3)
 
@@ -259,36 +229,19 @@ try:
                 if text:
                     break
 
-                print(
-                    "Retry listening..."
-                )
+                print("Retry listening...")
 
             if not text:
 
-                speak(
-                    "Going to sleep boss."
-                )
+                speak("Going to sleep boss.")
 
                 break
 
             text = text.strip()
 
-            print(
-                "You:",
-                text
-            )
+            print("You:", text)
 
-            clean_text = clean_user_text(
-                text
-            )
-
-            # ==========================
-            # AUTO SAVE TO CHROMA
-            # ==========================
-
-            auto_save_memory(
-                clean_text
-            )
+            clean_text = clean_user_text(text)
 
             # ==========================
             # EXIT
@@ -299,13 +252,9 @@ try:
                 for word in exit_words
             ):
 
-                speak(
-                    "Goodbye boss"
-                )
+                speak("Goodbye boss")
 
-                print(
-                    "ROBIN: Goodbye!"
-                )
+                print("ROBIN: Goodbye!")
 
                 sys.exit()
 
@@ -325,30 +274,102 @@ try:
                 break
 
             # ==========================
-            # SIMPLE CHAT
+            # SIMPLE REPLIES
             # ==========================
 
             if clean_text in simple_replies:
 
-                response = (
-                    simple_replies[
-                        clean_text
-                    ]
-                )
+                response = simple_replies[
+                    clean_text
+                ]
 
                 print(
                     "ROBIN:",
                     response
                 )
 
+                speak(response)
+
+                continue
+
+            # ==========================
+            # COMMANDS
+            # ==========================
+
+            result = route_request(
+                clean_text
+            )
+
+            if result["type"] == "command":
+
+                response = result.get(
+                    "response"
+                )
+
+                if response:
+
+                    print(
+                        "ROBIN:",
+                        response
+                    )
+
+                    speak(response)
+
+                continue
+
+            # ==========================
+            # CODE REQUEST
+            # ==========================
+
+            if is_code_request(
+                clean_text
+            ):
+
+                code = generate_code_snippet(
+                    clean_text
+                )
+
+                print(
+                    "ROBIN:",
+                    code
+                )
+
                 speak(
-                    response
+                    "Code generated boss."
                 )
 
                 continue
 
             # ==========================
-            # JSON MEMORY SAVE
+            # MEMORY RECALL
+            # ==========================
+            if "your name" in clean_text:
+
+                 speak(
+        "My name is Robin."
+    )
+
+                 continue
+
+            memory_response = recall(
+                clean_text
+            )
+
+            if memory_response:
+
+                print(
+                    "ROBIN:",
+                    memory_response
+                )
+
+                speak(
+                    memory_response
+                )
+
+                continue
+
+            # ==========================
+            # MEMORY SAVE
             # ==========================
 
             memory_save = remember(
@@ -369,63 +390,12 @@ try:
                 continue
 
             # ==========================
-            # JSON MEMORY RECALL
+            # AUTO SAVE FACTS TO CHROMA
             # ==========================
 
-            memory_response = recall(
+            auto_save_memory(
                 clean_text
             )
-
-            if memory_response:
-
-                print(
-                    "ROBIN:",
-                    memory_response
-                )
-
-                speak(
-                    memory_response
-                )
-
-                continue
-
-            # ==========================
-            # COMMAND ROUTER
-            # ==========================
-
-            result = route_request(
-                clean_text
-            )
-
-            print(result)
-
-            if (
-                result["type"]
-                == "command"
-            ):
-
-                response = result.get(
-                    "response"
-                )
-
-                if response:
-
-                    print(
-                        "ROBIN:",
-                        response
-                    )
-
-                    speak(
-                        response
-                    )
-
-                else:
-
-                    speak(
-                        "Sorry boss, I couldn't understand that command."
-                    )
-
-                continue
 
             # ==========================
             # AI MODE
@@ -436,11 +406,27 @@ try:
                 clean_text
             )
 
-            print("ROBIN: ", end="", flush=True)
+            print(
+                "ROBIN:",
+                end=" ",
+                flush=True
+            )
 
-            for sentence in ask_api_stream(final_prompt):
-                print(sentence, end=" ", flush=True)
-                speak(sentence, language=core.brain.CURRENT_MODE)
+            for sentence in ask_api_stream(
+                final_prompt
+            ):
+
+                print(
+                    sentence,
+                    end=" ",
+                    flush=True
+                )
+
+                speak(
+                    sentence,
+                    language=core.brain.CURRENT_MODE
+                )
+
             print()
 
 except KeyboardInterrupt:

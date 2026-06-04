@@ -83,36 +83,26 @@ def detect_language_mode(text):
 
     text = text.lower().strip()
 
-    if re.search(
-        r'[\u0900-\u097F]',
-        text
-    ):
+    # Unicode Hindi script detection (covers pure Hindi input)
+    if re.search(r'[\u0900-\u097F]', text):
         return "hinglish"
 
-    words = set(
-        re.findall(
-            r"\b\w+\b",
-            text
-        )
-    )
+    words = set(re.findall(r"\b\w+\b", text))
 
-    # Synchronized with speaker.py Hinglish vocabulary
+    # Unified Hinglish vocabulary (matches speaker.py)
     hinglish_words = {
         "hai", "kar", "karo", "ka", "ki", "ke", "ko", "ek", "kya", "kaise",
         "kyun", "aap", "tum", "mujhe", "mera", "samjhao", "batao", "sakta",
         "sakti", "hu", "aur", "toh", "tha", "thi", "raha", "rahi", "rahe",
         "hoga", "hogi", "hoge", "gaya", "gayi", "gaye", "karta", "karti",
         "karte", "diya", "liya", "kiya", "kijiye", "karke", "chalo", "achha",
-        "accha", "badhiya", "theek", "batao", "samjha", "kholo", "chalu",
+        "accha", "badhiya", "theek", "samjha", "kholo", "chalu",
         "niklo", "jao", "aao", "karna", "krna"
     }
 
-    matches = len(
-        words.intersection(
-            hinglish_words
-        )
-    )
+    matches = len(words.intersection(hinglish_words))
 
+    # Use a single matching word to consider Hinglish
     if matches >= 1:
         return "hinglish"
 
@@ -236,11 +226,19 @@ Rules:
     # USER MESSAGE
     # =================================
 
+    # ===============================
+    # MEMORY FILTERING
+    # Remove any memory lines that could confuse the assistant about its own name.
+    # Specifically, drop lines containing "my name is" as they refer to the user.
+    filtered_memory = "\n".join(
+        [line for line in memory_context.splitlines() if not re.search(r"\\bmy name is\\b", line.lower())]
+    )
+
     user_content = f"""
 {language_instruction}
 
 MEMORY:
-{memory_context}
+{filtered_memory}
 
 USER:
 {prompt}
