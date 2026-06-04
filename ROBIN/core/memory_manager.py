@@ -55,14 +55,17 @@ def get_memory_context(query):
 
     memories = search_memory(
         query,
-        top_k=5
+        top_k=3
     )
 
-    if not memories:
-        return ""
+    filtered = []
 
-    return "\n".join(memories)
+    for m in memories:
 
+        if len(m.strip()) > 10:
+            filtered.append(m)
+
+    return "\n".join(filtered)
 
 # ==========================
 # SMART RECALL

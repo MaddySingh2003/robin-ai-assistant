@@ -7,6 +7,7 @@ except AttributeError:
     pass
 
 import time
+from tools.command import create_project_file
 
 from core.listener import listen
 from core.brain import ask_api_stream
@@ -104,6 +105,7 @@ sleep_words = [
 # =====================================
 # CLEAN TEXT
 # =====================================
+
 
 def clean_user_text(text):
 
@@ -294,7 +296,22 @@ try:
 
             # ==========================
             # COMMANDS
-            # ==========================
+            # ==========================\
+            
+            if ("create" in clean_text and "python file" in clean_text):
+                filename = "python.py"
+
+                with open(filename,"w",encoding="utf-8") as f:
+                 f.write('# Created by ROBIN\n\nprint("Hello World")')
+
+                 response = ( f"Created {filename}")
+
+
+                print("ROBIN:", response)
+
+                speak(response)
+
+                continue
 
             result = route_request(
                 clean_text
@@ -343,6 +360,16 @@ try:
             # ==========================
             # MEMORY RECALL
             # ==========================
+            if ("create" in clean_text and "file" in clean_text):
+                result = create_project_file(clean_text )
+                if result:
+
+                  print("ROBIN:", result)
+
+                  speak(result)
+
+                  continue
+
             if "your name" in clean_text:
 
                  speak(

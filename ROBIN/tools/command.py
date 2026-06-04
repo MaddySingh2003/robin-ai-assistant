@@ -223,7 +223,78 @@ def create_file_in_vscode(text):
 
     return f"Created {filename} in VSCode"
 
+import os
+import re
 
+def create_project_file(text):
+
+    file_types = {
+
+        "python": ".py",
+        "py": ".py",
+
+        "javascript": ".js",
+        "js": ".js",
+
+        "typescript": ".ts",
+        "ts": ".ts",
+
+        "html": ".html",
+        "css": ".css",
+
+        "java": ".java",
+
+        "c++": ".cpp",
+        "cpp": ".cpp",
+
+        "c ": ".c",
+        " c": ".c",
+
+        "c#": ".cs",
+
+        "json": ".json",
+
+        "react": ".jsx",
+        "angular": ".ts",
+
+        "node": ".js",
+
+        "sql": ".sql",
+
+        "txt": ".txt"
+    }
+
+    ext = None
+
+    lower = text.lower()
+
+    for key, value in file_types.items():
+
+        if key in lower:
+            ext = value
+            break
+
+    if not ext:
+        return None
+
+    filename = f"new_file{ext}"
+
+    filepath = os.path.join(
+        os.getcwd(),
+        filename
+    )
+
+    with open(
+        filepath,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write("")
+
+    return (
+        f"Created {filename}"
+    )
 # ======================================
 # EXECUTE COMMAND
 # ======================================
