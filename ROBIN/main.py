@@ -216,7 +216,7 @@ try:
 
         wait_for_wake_word()
 
-        speak("Yoooooohoooohoohoooooo")
+        speak("Yooooohohohohohoh")
 
         time.sleep(0.3)
 

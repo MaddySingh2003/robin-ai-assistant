@@ -2,7 +2,11 @@ import webbrowser
 import os
 import subprocess
 import re
-
+from tools.project_generator import (
+    create_react_project,
+    create_fastapi_project,
+    create_node_project
+)
 
 # ======================================
 # APP PATHS
@@ -320,107 +324,20 @@ def create_project(text):
     # React
     # ------------------
 
-    if "react" in text:
+    if "react" in text and "project" in text:
 
-        project = os.path.join(
-            root,
-            "ReactApp"
-        )
+      return create_react_project()
 
-        os.makedirs(
-            os.path.join(project, "src"),
-            exist_ok=True
-        )
+    if (
+    "fastapi" in text
+    or "fast api" in text
+) and "project" in text:
 
-        os.makedirs(
-            os.path.join(project, "public"),
-            exist_ok=True
-        )
+      return create_fastapi_project()
 
-        subprocess.Popen(
-            f'explorer "{project}"'
-        )
+    if "node" in text and "project" in text:
 
-        return f"Created React project at {project}"
-
-    # ------------------
-    # FastAPI
-    # ------------------
-
-    if "fast api" in text:
-
-        project = os.path.join(
-            root,
-            "FastAPIApp"
-        )
-
-        os.makedirs(
-            project,
-            exist_ok=True
-        )
-
-        with open(
-            os.path.join(
-                project,
-                "main.py"
-            ),
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(
-'''from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message":"Hello"}
-'''
-            )
-
-        subprocess.Popen(
-            f'explorer "{project}"'
-        )
-
-        return f"Created FastAPI project at {project}"
-
-    # ------------------
-    # Node
-    # ------------------
-
-    if "node" in text:
-
-        project = os.path.join(
-            root,
-            "NodeApp"
-        )
-
-        os.makedirs(
-            project,
-            exist_ok=True
-        )
-
-        with open(
-            os.path.join(
-                project,
-                "index.js"
-            ),
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(
-                'console.log("Hello Node");'
-            )
-
-        subprocess.Popen(
-            f'explorer "{project}"'
-        )
-
-        return f"Created Node project at {project}"
-
-    return None    
+      return create_node_project()   
     
     
 
