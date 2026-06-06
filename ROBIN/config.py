@@ -1,9 +1,6 @@
-from transformers import pipeline
+import shutil
 
-pipe = pipeline(
-    "automatic-speech-recognition",
-    model="Oriserve/Whisper-Hindi2Hinglish-Prime",
-    device=0
-)
-
-print("Loaded successfully")
+print("npm =", shutil.which("npm"))
+print("npx =", shutil.which("npx"))
+print("node =", shutil.which("node"))
+print("code =", shutil.which("code"))

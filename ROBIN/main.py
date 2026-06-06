@@ -216,7 +216,7 @@ try:
 
         wait_for_wake_word()
 
-        speak("Yooooohohohohohoh")
+        speak("Yess!")
 
         time.sleep(0.3)
 
@@ -235,7 +235,7 @@ try:
 
             if not text:
 
-                speak("Going to sleep boss.")
+                speak("bye.")
 
                 break
 
@@ -254,7 +254,7 @@ try:
                 for word in exit_words
             ):
 
-                speak("Goodbye boss")
+                speak("ok boss")
 
                 print("ROBIN: Goodbye!")
 
@@ -270,7 +270,7 @@ try:
             ):
 
                 speak(
-                    "Going back to sleep boss."
+                    "sleeped."
                 )
 
                 break

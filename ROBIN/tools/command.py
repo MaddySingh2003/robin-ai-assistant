@@ -5,7 +5,12 @@ import re
 from tools.project_generator import (
     create_react_project,
     create_fastapi_project,
-    create_node_project
+    create_node_project,
+    create_nextjs_project,
+    create_flask_project,
+    create_python_project,
+    create_cpp_project,
+    create_java_project
 )
 
 # ======================================
@@ -302,48 +307,147 @@ def create_project_file(text):
 # ======================================
 # EXECUTE COMMAND
 # ======================================
-import os
-import json
+import re
 
+def extract_project_name(text):
+
+    match = re.search(
+        r"(?:named|name)\s+(.+)",
+        text.lower()
+    )
+
+    if match:
+
+        return (
+            match.group(1)
+            .strip()
+            .replace(" ", "_")
+        )
+
+    return None
 
 def create_project(text):
 
     text = text.lower()
 
-    root = os.path.join(
-        os.getcwd(),
-        "Projects"
-    )
+    name = extract_project_name(text)
 
-    os.makedirs(
-        root,
-        exist_ok=True
-    )
-
-    # ------------------
-    # React
-    # ------------------
-
-    if "react" in text and "project" in text:
-
-      return create_react_project()
+    # =========================
+    # REACT
+    # =========================
 
     if (
-    "fastapi" in text
-    or "fast api" in text
-) and "project" in text:
+        "react" in text
+        and (
+            "project" in text
+            or "app" in text
+        )
+    ):
 
-      return create_fastapi_project()
+        return create_react_project(
+            name or "ReactApp"
+        )
 
-    if "node" in text and "project" in text:
+    # =========================
+    # NEXTJS
+    # =========================
 
-      return create_node_project()   
+    if (
+        "next" in text
+        or "nextjs" in text
+    ):
+
+        return create_nextjs_project(
+            name or "NextApp"
+        )
+
+    # =========================
+    # FASTAPI
+    # =========================
+
+    if (
+        "fastapi" in text
+        or "fast api" in text
+    ):
+
+        return create_fastapi_project(
+            name or "FastAPIApp"
+        )
+
+    # =========================
+    # FLASK
+    # =========================
+
+    if "flask" in text:
+
+        return create_flask_project(
+            name or "FlaskApp"
+        )
+
+    # =========================
+    # NODE
+    # =========================
+
+    if (
+        "node" in text
+        or "express" in text
+    ):
+
+        return create_node_project(
+            name or "NodeApp"
+        )
+
+    # =========================
+    # PYTHON
+    # =========================
+
+    if (
+        "python project" in text
+        or "python app" in text
+    ):
+
+        return create_python_project(
+            name or "PythonApp"
+        )
+
+    # =========================
+    # C++
+    # =========================
+
+    if (
+        "c++" in text
+        or "cpp" in text
+    ):
+
+        return create_cpp_project(
+            name or "CppProject"
+        )
+
+    # =========================
+    # JAVA
+    # =========================
+
+    if "java" in text:
+
+        return create_java_project(
+            name or "JavaApp"
+        )
+
+    return None
     
     
 
 def execute_command(text):
 
     text = normalize_text(text)
+    # =========================
+# PROJECT COMMANDS
+# =========================
+
+    project_result = create_project(text)
+
+    if project_result:
+      return project_result
 
     print(
         f"Normalized command: {text}"
