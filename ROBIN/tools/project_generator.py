@@ -8,6 +8,12 @@ import subprocess
 
 
 import os
+import subprocess
+
+
+# =====================================
+# PROJECTS ROOT
+# =====================================
 
 def get_projects_folder():
 
@@ -28,23 +34,41 @@ def get_projects_folder():
 
     return projects
 
+
+# =====================================
+# OPEN IN VSCODE
+# =====================================
+
 def open_vscode(path):
 
     try:
-
         subprocess.Popen(
-            f'code "{path}"',
-            shell=True
+            [
+                r"C:\Users\Milan\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd",
+                path
+            ]
         )
-
     except Exception as e:
-
         print("VSCode error:", e)
 
+
 # =====================================
-# REACT PROJECT
+# CREATE PROJECT DIRECTORY
 # =====================================
 
+def create_project_dir(project_name):
+
+    project_path = os.path.join(
+        get_projects_folder(),
+        project_name
+    )
+
+    os.makedirs(
+        project_path,
+        exist_ok=True
+    )
+
+    return project_path
 
 def create_react_project(project_name="ReactApp"):
 
@@ -58,19 +82,28 @@ def create_react_project(project_name="ReactApp"):
         )
 
         subprocess.run(
-            [
-                r"C:\Program Files\nodejs\npx.cmd",
-                "create-vite@latest",
-                project_name,
-                "--template",
-                "react",
-                "--skip-install"
-            ],
-            cwd=root,
-            check=True
-        )
-
+    [
+        "cmd",
+        "/c",
+        "npx",
+        "create-vite@latest",
+        project_name,
+        "--template",
+        "react",
+        "--yes"
+    ],
+    cwd=get_projects_folder(),
+    check=True
+)
+        
         open_vscode(project_path)
+
+        subprocess.Popen(
+            "npm run dev",
+            cwd=project_path,
+            shell=True,
+            creationflags=subprocess.CREATE_NEW_CONSOLE
+        )
 
         return (
             f"React project created at "
@@ -81,16 +114,12 @@ def create_react_project(project_name="ReactApp"):
 
         return f"React project error: {e}"
 
-def create_fastapi_project(
-    project_name="FastAPIApp"
-):
+
+def create_fastapi_project(project_name="FastAPIApp"):
 
     try:
 
-        root = get_projects_folder()
-
-        project_path = os.path.join(
-            root,
+        project_path = create_project_dir(
             project_name
         )
 
@@ -105,10 +134,7 @@ def create_fastapi_project(
         )
 
         with open(
-            os.path.join(
-                app_dir,
-                "main.py"
-            ),
+            os.path.join(app_dir, "main.py"),
             "w",
             encoding="utf-8"
         ) as f:
@@ -149,25 +175,21 @@ uvicorn
     except Exception as e:
 
         return f"FastAPI error: {e}"
-
 # =====================================
 # NODE EXPRESS PROJECT
 # =====================================
 
-def create_node_project(
-    project_name="NodeApp"
-):
+def create_node_project(project_name="NodeApp"):
 
     try:
 
-        os.makedirs(
-            project_name,
-            exist_ok=True
+        project_path = create_project_dir(
+            project_name
         )
 
         with open(
             os.path.join(
-                project_name,
+                project_path,
                 "server.js"
             ),
             "w",
@@ -187,14 +209,16 @@ app.listen(3000);
 '''
             )
 
-        open_vscode(project_name)
+        open_vscode(project_path)
 
-        return f"Node project created: {project_name}"
+        return (
+            f"Node project created at "
+            f"{project_path}"
+        )
 
     except Exception as e:
 
         return f"Node error: {e}"
-
 
 # =====================================
 # NEXTJS PROJECT

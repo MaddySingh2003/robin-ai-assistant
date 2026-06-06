@@ -438,6 +438,17 @@ def create_project(text):
     
 
 def execute_command(text):
+    try:
+
+      project_result = create_project(text)
+      if project_result:
+            return project_result
+
+    except Exception as e:
+
+      print("Project Error:", e)
+
+      return f"Project creation failed: {e}"
 
     text = normalize_text(text)
     # =========================
@@ -546,6 +557,7 @@ def execute_command(text):
         "instagram":
         "https://instagram.com",
     }
+    
 
     for name, url in websites.items():
 
@@ -661,5 +673,6 @@ def execute_command(text):
             send_media_key(174)
 
         return "Volume decreased"
+    
 
     return None
