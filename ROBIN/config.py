@@ -1,6 +1,10 @@
-import shutil
+# test_vscode.py
 
-print("npm =", shutil.which("npm"))
-print("npx =", shutil.which("npx"))
-print("node =", shutil.which("node"))
-print("code =", shutil.which("code"))
+import subprocess
+
+subprocess.Popen([
+    r"C:\Users\Milan\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd",
+    r"C:\Users\Milan\Desktop\ROBIN_Projects"
+])
+
+print("Done")

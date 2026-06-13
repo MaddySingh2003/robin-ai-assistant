@@ -184,6 +184,22 @@ def send_media_key(key):
 # ======================================
 # CREATE FILE IN VSCODE
 # ======================================
+def open_vscode(path):
+
+    try:
+
+        vscode = r"C:\Users\Milan\AppData\Local\Programs\Microsoft VS Code\bin\code.cmd"
+
+        subprocess.Popen(
+            [vscode, path]
+        )
+
+        print(f"Opened VS Code: {path}")
+
+    except Exception as e:
+
+        print("VSCode error:", e)
+
 
 def create_file_in_vscode(text):
 
@@ -510,6 +526,26 @@ def execute_command(text):
     # ==================================
     # GOOGLE SEARCH
     # ==================================
+    if "open" in text and "project" in text:
+
+      project_name = (
+        text
+        .replace("open", "")
+        .replace("project", "")
+        .strip()
+        .replace(" ", "_")
+    )
+
+      path = os.path.join(
+        get_projects_folder(),
+        project_name
+    )
+
+      if os.path.exists(path):
+
+        open_vscode(path)
+
+        return f"Opening {project_name}"
 
     if (
         text.startswith("search ")

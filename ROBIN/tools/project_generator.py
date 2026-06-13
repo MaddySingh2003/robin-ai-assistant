@@ -70,6 +70,24 @@ def create_project_dir(project_name):
 
     return project_path
 
+def start_react_project(project_name):
+
+    root = get_projects_folder()
+
+    project_path = os.path.join(
+        root,
+        project_name
+    )
+
+    subprocess.Popen(
+        "npm run dev",
+        cwd=project_path,
+        shell=True,
+        creationflags=subprocess.CREATE_NEW_CONSOLE
+    )
+
+    return f"Started React project {project_name}"
+
 def create_react_project(project_name="ReactApp"):
 
     try:
@@ -82,28 +100,30 @@ def create_react_project(project_name="ReactApp"):
         )
 
         subprocess.run(
-    [
-        "cmd",
-        "/c",
-        "npx",
-        "create-vite@latest",
-        project_name,
-        "--template",
-        "react",
-        "--yes"
-    ],
-    cwd=get_projects_folder(),
-    check=True
-)
-        
-        open_vscode(project_path)
-
-        subprocess.Popen(
-            "npm run dev",
-            cwd=project_path,
-            shell=True,
-            creationflags=subprocess.CREATE_NEW_CONSOLE
+            [
+                "cmd",
+                "/c",
+                "npm",
+                "create",
+                "vite@latest",
+                project_name,
+                "--",
+                "--template",
+                "react"
+            ],
+            cwd=root,
+            check=True
         )
+        print("=" * 50)
+        print("PROJECT CREATED")
+        print("PATH =", project_path)
+        print("EXISTS =", os.path.exists(project_path))
+        print("OPENING VSCODE...")
+        print("=" * 50)
+
+
+
+        open_vscode(project_path)
 
         return (
             f"React project created at "
@@ -113,7 +133,6 @@ def create_react_project(project_name="ReactApp"):
     except Exception as e:
 
         return f"React project error: {e}"
-
 
 def create_fastapi_project(project_name="FastAPIApp"):
 
