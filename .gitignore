@@ -1,0 +1,21 @@
+# Virtual environments
+venv/
+
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Audio/temp
+temp_audio.wav
+
+# Other folders
+
+espeak-ng-data/
+
+
+.pytest_cache/
+
+ROBIN/memory_db/
+Projects/

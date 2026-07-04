@@ -1,0 +1,51 @@
+# ==========================================
+# ROBIN AI Assistant
+# Essential Dependencies
+# Python 3.11+
+# ==========================================
+
+# ---------- AI ----------
+ollama==0.6.2
+openai-whisper==20250625
+chromadb==1.5.9
+sentence-transformers==5.1.1
+transformers==4.56.2
+torch==2.8.0
+
+# ---------- Speech ----------
+sounddevice==0.5.5
+pygame==2.6.1
+faster-whisper==1.2.1
+
+# ---------- Data ----------
+numpy==2.3.2
+scipy==1.16.2
+
+# ---------- API ----------
+fastapi==0.117.1
+uvicorn==0.37.0
+requests==2.32.5
+
+# ---------- Configuration ----------
+python-dotenv==1.2.2
+PyYAML==6.0.3
+
+# ---------- Memory ----------
+pydantic==2.11.9
+
+# ---------- Utilities ----------
+GitPython==3.1.46
+rich==14.1.0
+tqdm==4.67.1
+
+# ---------- File Handling ----------
+python-docx==1.2.0
+PyPDF2==3.0.1
+openpyxl==3.1.5
+pillow==11.3.0
+
+# ---------- Browser / Parsing ----------
+lxml==6.0.2
+
+# ---------- Tokenizer ----------
+tiktoken==0.12.0

@@ -1,0 +1,31 @@
+<section class="features" id="features">
+  <div class="features-container">
+    <div class="features-header">
+      <span class="section-tag">Capabilities</span>
+      <h2 class="section-title">Built with <span class="gradient-text">Advanced Agentic Architecture</span></h2>
+      <p class="section-desc">
+        ROBIN combines voice processing, planning agents, tool integration, and semantic memory to manage tasks directly on your workstation.
+      </p>
+    </div>
+    
+    <div class="features-grid">
+      @for (feature of features(); track feature.title) {
+        <div class="feature-card">
+          <div class="card-glow" [style.background]="feature.gradient"></div>
+          <div class="card-content">
+            <div class="card-header">
+              <span class="card-badge">{{ feature.badge }}</span>
+            </div>
+            
+            <div class="feature-icon-wrapper">
+              <span class="feature-icon">{{ feature.icon }}</span>
+            </div>
+            
+            <h3 class="feature-title">{{ feature.title }}</h3>
+            <p class="feature-desc">{{ feature.description }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

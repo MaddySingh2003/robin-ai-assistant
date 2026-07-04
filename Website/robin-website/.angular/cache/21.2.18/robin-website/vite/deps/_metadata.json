@@ -1,0 +1,79 @@
+{
+  "hash": "48906b78",
+  "configHash": "550b2621",
+  "lockfileHash": "2d3f3709",
+  "browserHash": "5a42bd27",
+  "optimized": {
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "20df5c94",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "ed69247e",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "dc202108",
+      "needsInterop": false
+    },
+    "@tsparticles/engine": {
+      "src": "../../../../../../node_modules/@tsparticles/engine/browser/index.js",
+      "file": "@tsparticles_engine.js",
+      "fileHash": "25d9a151",
+      "needsInterop": false
+    },
+    "@tsparticles/slim": {
+      "src": "../../../../../../node_modules/@tsparticles/slim/browser/index.js",
+      "file": "@tsparticles_slim.js",
+      "fileHash": "cd564282",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "InteractivityPluginInstance-PZUCFQIO": {
+      "file": "InteractivityPluginInstance-PZUCFQIO.js"
+    },
+    "ImagePreloaderInstance-MGVY5T3W": {
+      "file": "ImagePreloaderInstance-MGVY5T3W.js"
+    },
+    "OverlapPluginInstance-A5MZUD6N": {
+      "file": "OverlapPluginInstance-A5MZUD6N.js"
+    },
+    "LinkInstance-TAA2DIND": {
+      "file": "LinkInstance-TAA2DIND.js"
+    },
+    "chunk-6Z6EGV7K": {
+      "file": "chunk-6Z6EGV7K.js"
+    },
+    "chunk-TPMEKHZB": {
+      "file": "chunk-TPMEKHZB.js"
+    },
+    "chunk-JXU4QNIP": {
+      "file": "chunk-JXU4QNIP.js"
+    },
+    "Container-QPE5ZK5K": {
+      "file": "Container-QPE5ZK5K.js"
+    },
+    "BlendPluginInstance-5M7YYL7C": {
+      "file": "BlendPluginInstance-5M7YYL7C.js"
+    },
+    "MovePluginInstance-BYBHF4LL": {
+      "file": "MovePluginInstance-BYBHF4LL.js"
+    },
+    "chunk-Z7RUR3RC": {
+      "file": "chunk-Z7RUR3RC.js"
+    },
+    "chunk-DGIMIMD3": {
+      "file": "chunk-DGIMIMD3.js"
+    },
+    "chunk-GOMI4DH3": {
+      "file": "chunk-GOMI4DH3.js"
+    }
+  }
+}

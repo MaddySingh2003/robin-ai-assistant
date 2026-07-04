@@ -1,0 +1,81 @@
+<section class="installation" id="installation">
+  <div class="install-container">
+    <div class="install-header">
+      <span class="section-tag">Setup Guide</span>
+      <h2 class="section-title">Get Started in <span class="gradient-text">Minutes</span></h2>
+      <p class="section-desc">
+        Robin runs locally on Windows, connecting seamlessly to local LLM providers or standard API gateways.
+      </p>
+    </div>
+    
+    <div class="install-tabs">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'local'" 
+        (click)="setTab('local')">
+        💻 Installation Steps
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'env'" 
+        (click)="setTab('env')">
+        ⚙ Environment Configuration
+      </button>
+    </div>
+    
+    <div class="install-content-wrapper">
+      @if (activeTab() === 'local') {
+        <div class="timeline-wrapper">
+          @for (step of localSteps(); track step.title) {
+            <div class="timeline-step">
+              <div class="step-num-container">
+                <span class="step-num">{{ $index + 1 }}</span>
+                <span class="step-connector"></span>
+              </div>
+              
+              <div class="step-details">
+                <h3 class="step-title">{{ step.title }}</h3>
+                
+                <div class="code-terminal">
+                  <div class="terminal-ctrls">
+                    <span class="ctrl-btn copy" (click)="copyToClipboard(step.command, $index)">
+                      @if (copied() === $index) {
+                        ✓ Copied!
+                      } @else {
+                        📋 Copy
+                      }
+                    </span>
+                  </div>
+                  <pre class="code-block"><code><span class="code-comment">{{ step.comment }}</span>
+{{ step.command }}</code></pre>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="env-config-card">
+          <div class="env-header">
+            <span class="env-title">.env.example</span>
+            <span class="env-desc-top">Create a .env file in the root project directory</span>
+          </div>
+          
+          <div class="env-body">
+            @for (config of envConfigs(); track config.key) {
+              <div class="env-row">
+                <div class="env-key-col">
+                  <span class="env-key">{{ config.key }}</span>
+                  <span class="env-equals">=</span>
+                  <span class="env-val">"{{ config.value }}"</span>
+                </div>
+                <div class="env-desc-col">
+                  <span class="env-info-text"># {{ config.desc }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

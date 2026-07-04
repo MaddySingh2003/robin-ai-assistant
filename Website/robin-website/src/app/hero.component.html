@@ -1,0 +1,89 @@
+<section class="hero" id="hero">
+  <div class="hero-container">
+    <!-- Left Column: Details & Actions -->
+    <div class="hero-left">
+      <div class="hero-badge-wrapper">
+        <span class="badge-dot"></span>
+        <span class="badge-text">Local Autonomous AI Assistant</span>
+      </div>
+      
+      <h1 class="hero-title">
+        Meet <span class="highlight-text">{{ heading() }}</span>
+      </h1>
+      <h2 class="hero-subtitle">{{ subheading() }}</h2>
+      
+      <p class="hero-desc">{{ description() }}</p>
+      
+      <div class="hero-bullets">
+        <div class="bullet-item">
+          <span class="bullet-icon">🎙️</span>
+          <span class="bullet-text">Seamless Voice Controls</span>
+        </div>
+        <div class="bullet-item">
+          <span class="bullet-icon">🧠</span>
+          <span class="bullet-text">Vector-based Local Memory</span>
+        </div>
+        <div class="bullet-item">
+          <span class="bullet-icon">🛠️</span>
+          <span class="bullet-text">Autonomous Tool Execution</span>
+        </div>
+      </div>
+      
+     <div class="hero-actions">
+  <a
+    href="/robin-ai-assistant.zip"
+    download="ROBIN-AI-Assistant.zip"
+    class="btn-primary"
+  >
+    ⬇ Download & Install
+  </a>
+
+  <a
+    href="#features"
+    class="btn-secondary"
+  >
+    🚀 Explore Features
+  </a>
+</div>
+    </div>
+    
+    <!-- Right Column: Interactive Terminal -->
+    <div class="hero-right">
+      <div class="terminal-card">
+        <div class="terminal-header">
+          <div class="terminal-controls">
+            <span class="ctrl-dot red"></span>
+            <span class="ctrl-dot yellow"></span>
+            <span class="ctrl-dot green"></span>
+          </div>
+          <span class="terminal-title">robin-terminal.sh</span>
+          <span class="terminal-status">Online</span>
+        </div>
+        
+        <div class="terminal-body">
+          <div class="terminal-welcome">
+            <span class="welcome-text">ROBIN AI Assistant System Shell [Version 1.0.0]</span>
+            <br>
+            <span class="welcome-text-sub">Connecting to local Ollama / OpenAI model... Connected.</span>
+          </div>
+          
+          <div class="terminal-logs">
+            @for (line of terminalLines(); track $index) {
+              <div class="log-line" [class]="line.type">
+                @if (line.type === 'input') {
+                  <span class="prompt">$</span>
+                }
+                <span class="line-content">{{ line.text }}</span>
+              </div>
+            }
+            
+            <div class="terminal-input-line">
+              <span class="prompt">$</span>
+              <span class="cursor" [class.blink]="terminalCursor()">_</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

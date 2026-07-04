@@ -1,0 +1,25 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Models
+*.onnx
+*.bin
+
+# Archives
+*.zip
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+dist/
+
+# Environment
+.env

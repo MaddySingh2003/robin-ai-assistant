@@ -1,0 +1,48 @@
+<section class="roadmap" id="roadmap">
+  <div class="roadmap-container">
+    <div class="roadmap-header">
+      <span class="section-tag">Roadmap</span>
+      <h2 class="section-title">Development <span class="gradient-text">Timeline</span></h2>
+      <p class="section-desc">
+        Track our engineering milestones as we build the premier local-first desktop agent system.
+      </p>
+    </div>
+    
+    <div class="roadmap-timeline">
+      @for (item of roadmapItems(); track item.phase) {
+        <div class="roadmap-card" [class]="item.status">
+          <div class="card-status-indicator">
+            @if (item.status === 'completed') {
+              <span class="status-icon">✓</span>
+            } @else if (item.status === 'current') {
+              <span class="status-icon pulsate">⚡</span>
+            } @else {
+              <span class="status-icon">⌛</span>
+            }
+          </div>
+          
+          <div class="roadmap-info">
+            <div class="roadmap-meta">
+              <span class="roadmap-phase">{{ item.phase }}</span>
+              <span class="roadmap-status-text" [class]="item.status">
+                {{ item.status === 'completed' ? 'Completed' : item.status === 'current' ? 'In Progress' : 'Planned' }}
+              </span>
+            </div>
+            
+            <h3 class="roadmap-title">{{ item.title }}</h3>
+            <p class="roadmap-description">{{ item.description }}</p>
+            
+            <ul class="roadmap-points">
+              @for (point of item.points; track point) {
+                <li>
+                  <span class="point-bullet"></span>
+                  <span class="point-text">{{ point }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
