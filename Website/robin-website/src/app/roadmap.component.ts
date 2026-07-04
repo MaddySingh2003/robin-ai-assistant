@@ -25,7 +25,7 @@ export class RoadmapComponent {
       points: [
         'Voice threshold activation with PyAudio',
         'Offline Whisper transcription integrations',
-        'Text-to-speech feedback (pyttsx3 & OpenAI TTS)',
+        'Text-to-speech feedback Whisper',
         'Local console debugging panel setup'
       ]
     },
