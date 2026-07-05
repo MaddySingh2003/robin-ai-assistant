@@ -1,4 +1,4 @@
-# 🤖 ROBIN – AI Desktop Assistant
+# {https://github.com/MaddySingh2003/robin-ai-assistant/blob/main/Website/robin-website/public/Robin-I.png?raw=true} ROBIN – AI Desktop Assistant
 
 > A next-generation, local-first AI assistant capable of voice interaction, memory, tool execution, project generation, and autonomous task planning.
 
