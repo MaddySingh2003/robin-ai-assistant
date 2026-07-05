@@ -1,15 +1,4 @@
-# {https://github.com/MaddySingh2003/robin-ai-assistant/blob/main/Website/robin-website/public/Robin-I.png?raw=true} ROBIN – AI Desktop Assistant
-
-
-<meta property="og:title" content="ROBIN – AI Desktop Assistant">
-<meta property="og:description" content="A next-generation, local-first AI desktop assistant.">
-<meta property="og:image" content="https://yourdomain.com/preview.png">
-<meta property="og:url" content="https://yourdomain.com">
-<meta property="og:type" content="website">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://yourdomain.com/preview.png">
-
+<img src="Website/robin-website/public/Robin-I.png" width="900"> ROBIN – AI Desktop Assistant
 
 > A next-generation, local-first AI assistant capable of voice interaction, memory, tool execution, project generation, and autonomous task planning.
 
