@@ -1,4 +1,4 @@
-<img src="Website/robin-website/public/Robin-I.png" width="20" hight="20"> ROBIN – AI Desktop Assistant
+<img src="Website/robin-website/public/Robin-I.png" width="25" hight="25"> ROBIN – AI Desktop Assistant
 
 > A next-generation, local-first AI assistant capable of voice interaction, memory, tool execution, project generation, and autonomous task planning.
 
